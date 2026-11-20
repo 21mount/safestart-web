@@ -1,0 +1,824 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>세이프시동</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#f3f7f6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="세이프시동">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--g:#1f9e6e;--gd:#146b4c;--g2:#2fb985;--gl:#e4f5ec;--gl2:#f0faf5;--bg:#f3f7f6;--tx:#17212e;--sub:#7b8594;--line:#e8edf0;--red:#e0534a;--redl:#fdecea;--amb:#c98a12;--ambl:#fff4dc;--card:#fff;
+ --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overscroll-behavior:none}
+body{font-family:'Noto Sans KR',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:var(--tx);background:#dfe6e3;font-size:14px;-webkit-user-select:none;user-select:none;word-break:keep-all;overflow-wrap:break-word;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input{font:inherit;-webkit-user-select:text;user-select:text}
+/* 폰 프레임 (PC에서만) */
+.wrap{height:100%;display:flex;align-items:center;justify-content:center;padding:20px}
+.phone{width:390px;height:min(844px,100%);border-radius:48px;background:#121619;padding:10px;box-shadow:0 20px 50px rgba(0,0,0,.25);flex:none}
+.scr{position:relative;width:100%;height:100%;border-radius:38px;overflow:hidden;background:var(--bg)}
+@media(max-width:780px){.wrap{padding:0}.phone{width:100%;height:100%;border-radius:0;padding:0;box-shadow:none}.scr{border-radius:0}body{background:var(--bg)}}
+/* 화면 */
+.view{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:calc(var(--sat) + 18px) 18px calc(var(--sab) + 110px);display:none;background:
+ radial-gradient(120% 40% at 50% 0%,#fff 0%,rgba(255,255,255,0) 70%),var(--bg)}
+.view.on{display:block}
+.view::-webkit-scrollbar{width:0}
+.hill{position:absolute;left:0;right:0;pointer-events:none;z-index:0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1}
+.h1{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.lead{color:var(--sub);font-size:14px;line-height:1.55;margin-top:6px}
+.pill{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 12px 0 11px;background:rgba(255,255,255,.92);border:1px solid #e2e8eb;border-radius:18px;
+ font-size:13px;font-weight:600;letter-spacing:-.01em;color:#2a3542;white-space:nowrap;line-height:1;box-shadow:0 1px 2px rgba(20,40,30,.05),0 4px 12px rgba(20,40,30,.04);transition:background .15s,transform .1s}
+.pill:active{transform:scale(.97);background:#f4f7f8}
+.pill svg{flex:none;display:block}.pill span{display:block;padding-top:1px}
+.pill .cd{margin-left:1px;opacity:.7}
+.lnk{display:inline-flex;align-items:center;gap:2px;font-size:13px;color:var(--sub);line-height:1}
+.ic-chev{display:block;flex:none}
+.card{background:var(--card);border-radius:22px;box-shadow:0 6px 24px rgba(24,60,48,.06);position:relative;z-index:1}
+.sec{display:flex;justify-content:space-between;align-items:center;margin:22px 2px 10px}
+.sec b{font-size:18px}.sec button,.sec span{font-size:13px;color:var(--sub)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;font-weight:700;border-radius:20px;padding:6px 12px;background:var(--gl);color:var(--gd);white-space:nowrap}
+.chip.red{background:var(--redl);color:var(--red)}.chip.amb{background:var(--ambl);color:var(--amb)}.chip.gray{background:#edf0f2;color:var(--sub)}
+.muted{color:var(--sub)}.small{font-size:12px}
+.chev{color:#a9b2bd;font-size:18px}
+.row{display:flex;align-items:center;gap:10px}
+.between{display:flex;align-items:center;justify-content:space-between}
+/* 홈 */
+.hero{display:flex;align-items:center;margin-top:10px;position:relative;z-index:1;min-height:236px}
+.ring{width:184px;height:184px;border-radius:50%;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#fff;position:relative;
+ box-shadow:0 0 0 12px rgba(47,185,133,.18),inset 0 0 0 7px var(--g2),0 10px 30px rgba(31,158,110,.15)}
+.ring.idle{box-shadow:0 0 0 12px rgba(150,160,170,.12),inset 0 0 0 7px #c9d1d8,0 10px 30px rgba(0,0,0,.05)}
+.ring.bad{box-shadow:0 0 0 12px rgba(224,83,74,.15),inset 0 0 0 7px var(--red),0 10px 30px rgba(224,83,74,.15)}
+.ring .v{font-size:46px;font-weight:800;color:var(--gd);letter-spacing:-.02em;line-height:1.05}
+.ring.bad .v{color:var(--red)}.ring.idle .v{color:#a3acb6}
+.ring .u{font-size:14px;color:#3d6b5a;margin:2px 0 8px}
+.say{font-size:15px;font-weight:500;line-height:1.55;margin-left:4px}
+.cta{display:flex;align-items:center;gap:14px;width:100%;text-align:left;margin-top:16px;padding:18px;border-radius:24px;color:#fff;
+ background:linear-gradient(120deg,#2b9f78,#1d7a5c);box-shadow:0 10px 26px rgba(29,122,92,.3);position:relative;z-index:1}
+.cta .ic{width:62px;height:62px;border-radius:50%;background:rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;flex:none}
+.cta small{font-size:12.5px;opacity:.85}.cta b{display:block;font-size:21px;margin:2px 0}.cta p{font-size:12.5px;opacity:.85;line-height:1.5}
+.cta.done{background:linear-gradient(120deg,#e9f6f0,#dff1e8);color:var(--gd);box-shadow:none}
+.cta.done .ic{background:#fff}
+.rec{display:grid;grid-template-columns:1fr 1fr auto 14px;align-items:center;gap:8px;padding:15px 18px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.rec:last-child{border:0}
+.rec .d{font-weight:500}.rec .t{font-size:12.5px;color:var(--sub);margin-top:2px}
+.rec .b{font-size:17px;font-weight:700}.rec .b small{display:block;font-size:11px;color:var(--sub);font-weight:400}
+.lock{display:flex;align-items:center;gap:14px;padding:16px 18px;margin-top:14px;border-radius:22px;background:linear-gradient(120deg,#eef9f3,#e3f4eb);position:relative;z-index:1}
+.lock.off{background:#f1f3f5}
+.lock .ic{width:54px;height:54px;border-radius:50%;background:#d3efe0;display:flex;align-items:center;justify-content:center;flex:none}
+.lock.off .ic{background:#e3e7eb}
+.lock .k{font-size:12.5px;color:var(--gd);font-weight:500}.lock.off .k{color:var(--sub)}
+.lock .m{font-size:16px;font-weight:800;color:var(--gd);margin:2px 0}.lock.off .m{color:#46505c}
+.lock .s{font-size:12px;color:var(--sub)}
+.tg{width:58px;height:34px;border-radius:20px;background:#cfd6dc;position:relative;flex:none;margin-left:auto;transition:.2s}
+.tg::after{content:'';position:absolute;top:4px;left:4px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.2);transition:.2s}
+.tg.on{background:var(--g)}.tg.on::after{left:28px}
+.exp{margin-top:8px;font-size:12px;color:var(--gd);background:rgba(255,255,255,.7);border-radius:10px;padding:6px 10px;display:inline-block}
+/* 기록 */
+.wk{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;gap:4px 0}
+.wk .n{font-size:12.5px;color:var(--sub)}.wk .dd{font-size:14px;color:#8a93a0;margin:6px 0}
+.wk .dd.today{color:var(--tx);font-weight:700}
+.dot{width:30px;height:30px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;background:#e6e9ec}
+.dot.ok{background:var(--g)}.dot.bad{background:var(--red)}.dot.sel{box-shadow:0 0 0 7px #d6efe3}.dot.bad.sel{box-shadow:0 0 0 7px var(--redl)}
+.dcell{cursor:pointer;padding:2px 0}
+.seg{display:flex;background:#eef1f3;border-radius:20px;padding:3px}
+.seg button{padding:6px 14px;border-radius:18px;font-size:13px;color:var(--sub);font-weight:500}
+.seg button.on{background:var(--g);color:#fff}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);margin-top:16px;padding-top:14px}
+.stats>div{display:flex;align-items:center;gap:8px;padding:0 6px}
+.stats>div+div{border-left:1px solid var(--line)}
+.stats .ci{width:30px;height:30px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center;flex:none}
+.stats>div{min-width:0}.stats small{font-size:10.5px;color:var(--sub);display:block;white-space:nowrap}.stats b{font-size:20px;white-space:nowrap}.stats b i{font-style:normal;font-size:12px;font-weight:500}
+.tl{display:grid;grid-template-columns:48px 14px 44px 1fr auto 12px;align-items:center;gap:8px;padding:14px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left;position:relative}
+.tl:last-child{border:0}
+.tl .tm{font-size:14px;color:var(--sub)}
+.tl .pt{width:9px;height:9px;border-radius:50%;background:var(--g);margin:0 auto}.tl .pt.bad{background:var(--red)}
+.tl .dr{width:40px;height:40px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center}
+.tl .dr.bad{background:var(--redl)}
+.tl .b{font-size:18px;font-weight:700}.tl .b small{display:block;font-size:11px;color:var(--sub);font-weight:400}
+.tl .b2{font-size:14.5px;font-weight:700;min-width:0}.tl .b2 small{display:block;font-size:11.5px;color:var(--sub);font-weight:400;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl .pt.amb{background:var(--amb)}.tl .dr.amb{background:var(--ambl)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal .h{font-size:11.5px;color:var(--sub);padding:4px 0}
+.cal .c{padding:6px 0;border-radius:10px;font-size:13px;cursor:pointer}
+.cal .c.x{color:#c5ccd3}.cal .c.sel{background:var(--gl)}
+.cal .c i{display:block;width:6px;height:6px;border-radius:50%;margin:4px auto 0;background:transparent}
+.cal .c i.ok{background:var(--g)}.cal .c i.bad{background:var(--red)}
+.cheer{display:flex;align-items:center;gap:14px;padding:18px;margin-top:16px;border-radius:22px;background:linear-gradient(120deg,#eef9f3,#e1f3ea);overflow:hidden;position:relative}
+/* 기기 */
+.dev{display:flex;gap:16px;padding:18px;align-items:center}
+.dev .ph{width:120px;height:120px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center;flex:none}
+.st{font-size:12.5px;font-weight:700;color:var(--g);display:flex;align-items:center;gap:6px}
+.st::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
+.st.off{color:#9aa3ad}.st.scan{color:var(--amb)}
+.bat{display:inline-flex;align-items:center;gap:6px;font-size:13px;margin-top:8px}
+.bat i{width:26px;height:13px;border:2px solid var(--g);border-radius:3px;position:relative;display:inline-block}
+.bat i::before{content:'';position:absolute;inset:1px;right:auto;background:var(--g);border-radius:1px;width:var(--w)}
+.tbtn{display:flex;align-items:center;gap:8px;width:100%;margin-top:12px;padding:12px 14px;border-radius:24px;background:var(--gl);color:var(--gd);font-weight:700;font-size:15px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tile{background:#fff;border-radius:18px;padding:14px 12px;text-align:left;box-shadow:0 6px 20px rgba(24,60,48,.05);position:relative}
+.tile .ti{width:40px;height:40px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.tile b{display:block;font-size:14.5px}.tile span{font-size:12px;color:var(--sub)}
+.tile .chev,.tile .ic-chev{position:absolute;right:10px;bottom:16px}
+.care{padding:18px;border-radius:22px;background:linear-gradient(120deg,#e9f7f0,#dcf1e6);position:relative;overflow:hidden;margin-top:14px;min-height:130px}
+.care b{color:var(--gd);font-size:16px;line-height:1.5;display:block;max-width:62%}
+.care button{margin-top:12px;background:#fff;color:var(--gd);padding:8px 14px;border-radius:20px;font-weight:700;font-size:13px}
+.dl{display:flex;align-items:center;gap:12px;padding:14px 16px;width:100%;text-align:left}
+.dl .th{width:52px;height:52px;border-radius:50%;background:#f0f3f5;display:flex;align-items:center;justify-content:center;flex:none}
+/* 리포트 */
+.idx{padding:18px;border-radius:22px;background:linear-gradient(120deg,#e9f7f0,#dbf0e5);position:relative;overflow:hidden;min-height:170px}
+.idx .lbl{display:inline-block;background:#fff;border-radius:16px;padding:5px 12px;font-size:12.5px;color:var(--gd);font-weight:700}
+.idx .big{font-size:64px;font-weight:800;color:var(--gd);line-height:1;margin-top:8px;letter-spacing:-.03em}.idx .big small{font-size:22px;color:#9fb3aa;font-weight:500}
+.kp{display:grid;grid-template-columns:1fr 1fr;margin-top:14px}
+.kp>div+div{border-left:1px solid var(--line);padding-left:14px}
+.kp small{font-size:12px;color:var(--sub)}.kp b{font-size:28px;letter-spacing:-.02em}.kp b i{font-style:normal;font-size:13px;color:var(--sub);font-weight:400}
+.dlt{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 8px;border-radius:12px;background:var(--gl);color:var(--gd);margin-left:6px;vertical-align:4px}
+.dlt.dn{background:#edf0f2;color:var(--sub)}
+.chart svg{display:block;width:100%}
+.legend{display:flex;justify-content:flex-end;gap:14px;font-size:11.5px;color:var(--sub);margin-top:10px}
+/* 탭바 */
+.tabbar{position:absolute;left:12px;right:12px;bottom:calc(var(--sab) + 10px);height:72px;border-radius:30px;background:rgba(255,255,255,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 8px 30px rgba(24,60,48,.12);display:flex;padding:6px;z-index:20}
+.tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;color:#7e8a98;border-radius:24px}
+.tabbar button.on{color:var(--gd);font-weight:700;background:radial-gradient(closest-side,#dff3e9,rgba(223,243,233,.4))}
+.tabbar svg{width:26px;height:26px}
+/* 측정 흐름 (풀스크린) */
+.flow{position:absolute;inset:0;background:var(--bg);z-index:40;display:none;flex-direction:column;padding:calc(var(--sat) + 10px) 20px calc(var(--sab) + 20px)}
+.flow.on{display:flex}
+.fhd{display:flex;align-items:center;height:48px}
+.fhd button{width:40px;height:40px;font-size:22px}
+.fhd b{flex:1;text-align:center;font-size:16px}
+.steps{display:flex;gap:6px;margin:6px 0 18px}
+.steps i{flex:1;height:4px;border-radius:4px;background:#dfe5e9}.steps i.on{background:var(--g)}
+.fbody{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;overflow-y:auto}
+.ftitle{font-size:22px;font-weight:800;line-height:1.4}
+.fdesc{color:var(--sub);margin-top:8px;line-height:1.6}
+.big-btn{width:100%;height:56px;border-radius:18px;background:var(--g);color:#fff;font-size:16px;font-weight:700;flex:none}
+.big-btn:disabled{background:#a9d9c3}
+.big-btn.line{background:#fff;color:var(--gd);border:1.5px solid #bfe3d1}
+.big-btn.red{background:var(--red)}
+.cam{width:240px;height:300px;border-radius:120px/150px;overflow:hidden;background:#1d2a28;margin:22px auto 0;position:relative;box-shadow:0 0 0 6px #fff,0 0 0 9px var(--g2)}
+.cam video,.cam canvas,.cam .ph{width:100%;height:100%;object-fit:cover;transform:scaleX(-1);display:block}
+.cam .ph{display:flex;align-items:center;justify-content:center;transform:none}
+.cam .shot{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.cam .shot.go{animation:fl .35s}
+@keyframes fl{0%{opacity:.9}100%{opacity:0}}
+.blow{width:230px;height:230px;margin:26px auto 0;position:relative}
+.blow svg{width:100%;height:100%;transform:rotate(-90deg)}
+.blow .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.blow .c b{font-size:54px;color:var(--gd);line-height:1}
+.wave{display:flex;gap:4px;justify-content:center;align-items:flex-end;height:30px;margin-top:16px}
+.wave i{width:5px;border-radius:3px;background:var(--g2);animation:wv 0.9s infinite ease-in-out}
+@keyframes wv{0%,100%{height:6px}50%{height:28px}}
+.res{width:150px;height:150px;border-radius:50%;margin:20px auto 0;display:flex;align-items:center;justify-content:center;background:var(--gl)}
+.res.bad{background:var(--redl)}
+.kv{display:flex;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px;width:100%}
+.kv:last-child{border:0}.kv span{color:var(--sub)}
+.info{width:100%;text-align:left;border-radius:16px;padding:12px 14px;font-size:13px;line-height:1.55;margin-top:12px;background:var(--gl2);color:#2f5c4c}
+.info.warn{background:var(--ambl);color:#7a5207}.info.bad{background:var(--redl);color:#8b2c25}
+.spin{width:54px;height:54px;border-radius:50%;border:5px solid #d6efe3;border-top-color:var(--g);animation:sp 1s linear infinite;margin:30px auto 0}
+@keyframes sp{to{transform:rotate(360deg)}}
+.prep{width:100%;text-align:left;margin-top:22px}
+.prep .it{display:flex;gap:12px;align-items:center;background:#fff;border-radius:16px;padding:14px;margin-bottom:10px}
+.prep .no{width:30px;height:30px;border-radius:50%;background:var(--gl);color:var(--gd);font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+/* 시트·토스트 */
+.sbg{position:absolute;inset:0;background:rgba(10,20,16,.4);z-index:60;display:none;align-items:flex-end}
+.sbg.on{display:flex}
+.sheet{width:100%;background:#fff;border-radius:24px 24px 0 0;max-height:80%;overflow-y:auto;padding:8px 0 calc(var(--sab) + 18px);animation:up .22s}
+@keyframes up{from{transform:translateY(40px);opacity:.4}}
+.sheet .sh{text-align:center;font-weight:700;padding:14px;position:relative}
+.sheet .sh button{position:absolute;right:14px;top:10px;font-size:20px}
+.opt{display:flex;align-items:center;justify-content:space-between;width:100%;padding:15px 22px;text-align:left;border-top:1px solid #f1f4f6}
+.opt.on{color:var(--gd);font-weight:700}.opt.on::after{content:'✓'}
+.opt.danger{color:var(--red)}
+.sbody{padding:4px 22px 6px}
+.toast{position:absolute;left:50%;bottom:calc(var(--sab) + 100px);transform:translateX(-50%);background:rgba(23,33,46,.92);color:#fff;padding:10px 18px;border-radius:22px;font-size:13px;z-index:80;opacity:0;transition:.25s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1}
+.demo{margin-top:24px;border:1px dashed #b8c3cc;border-radius:16px;padding:12px 14px}
+.demo b{font-size:12.5px}.demo .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.demo .chip{cursor:pointer;font-weight:500}.demo .chip.on{background:var(--gd);color:#fff}
+.mascot{display:block}
+/* 상단 차량번호 바 */
+.cbar{display:flex;align-items:center;justify-content:space-between;margin:-4px 0 14px;position:relative;z-index:2}
+.cbtn{display:inline-flex;align-items:center;gap:7px;height:38px;padding:0 10px 0 12px;border-radius:20px;background:rgba(255,255,255,.92);border:1px solid #e2e8eb;box-shadow:0 1px 2px rgba(20,40,30,.05),0 4px 12px rgba(20,40,30,.04)}
+.cbtn:active{transform:scale(.98)}
+.plate{display:inline-flex;align-items:center;font-weight:800;font-size:15px;letter-spacing:-.01em;color:#17212e;line-height:1;font-variant-numeric:tabular-nums}
+.cbtn .mdl{font-size:12.5px;color:var(--sub);font-weight:500}
+.ubtn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.92);border:1px solid #e2e8eb;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--gd);font-size:14px}
+/* 로그인 */
+.login{position:absolute;inset:0;z-index:70;background:radial-gradient(120% 50% at 50% 0%,#fff 0%,rgba(255,255,255,0) 70%),var(--bg);display:none;flex-direction:column;padding:calc(var(--sat) + 40px) 24px calc(var(--sab) + 24px);overflow-y:auto}
+.login.on{display:flex}
+.login .brand{display:flex;flex-direction:column;align-items:center;text-align:center}
+.login .brand b{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:8px}
+.login .brand p{color:var(--sub);font-size:13.5px;margin-top:6px;line-height:1.5}
+.lf{margin-top:26px}
+.lf label{display:block;font-size:12.5px;color:var(--sub);margin:12px 0 6px}
+.lf .inp{height:52px;border-radius:14px;font-size:15px;border:1.5px solid #e2e8eb}
+.lf .inp:focus{outline:none;border-color:var(--g2);box-shadow:0 0 0 4px rgba(47,185,133,.12)}
+.lerr{color:var(--red);font-size:12.5px;min-height:18px;margin-top:8px}
+.lopt{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#4a5562;margin:6px 0 16px}
+.lopt label{display:flex;gap:6px;align-items:center;margin:0;color:#4a5562;font-size:13px}
+.lopt input{accent-color:var(--g);width:16px;height:16px}
+.demoacc{margin-top:22px;border:1px dashed #b8c3cc;border-radius:16px;padding:12px 14px}
+.demoacc b{font-size:12.5px}
+.acc{display:flex;align-items:center;gap:10px;width:100%;padding:10px 0;border-top:1px solid #edf0f2;text-align:left}
+.acc:first-of-type{border-top:0}
+.acc .id{font-size:13px;font-weight:700}.acc .nm{font-size:11.5px;color:var(--sub)}
+/* 홈: 시동 잠금 상태 */
+.ring .lk{width:62px;height:62px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#f1f4f6;margin-bottom:4px}
+.ring.ok .lk{background:var(--gl)}.ring.bad .lk{background:var(--redl)}
+.ring .v2{font-size:28px;font-weight:800;letter-spacing:-.02em;color:#56616d;line-height:1.1;margin-bottom:8px}
+.ring.ok .v2{color:var(--gd)}.ring.bad .v2{color:var(--red)}
+.ring .chip{gap:4px;padding:5px 11px;font-size:12px}
+.ring .arc{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ring.ok.hasarc{box-shadow:0 0 0 12px rgba(47,185,133,.14),inset 0 0 0 7px #d8f0e4,0 10px 30px rgba(31,158,110,.15)}
+.hr{flex:1;display:flex;flex-direction:column;align-items:flex-start;padding-left:18px;min-width:0}
+.say2{font-size:20px;font-weight:800;line-height:1.35;letter-spacing:-.02em;color:#3d4753}
+.say2.ok{color:var(--gd)}.say2.bad{color:var(--red)}
+.say3{font-size:12.5px;color:var(--sub);line-height:1.5;margin-top:6px}
+.hm{align-self:flex-end;margin-top:2px}
+.lastc{display:block;width:100%;text-align:left;padding:16px 18px 12px}
+.lastc .lt{font-size:15px;font-weight:700}.lastc .lt i{font-style:normal;font-weight:400;font-size:12px;color:var(--sub);margin-left:4px}
+.lrow{display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+.navb{width:30px;height:30px;border-radius:50%;background:#fff;border:1px solid #e3e8eb;display:inline-flex;align-items:center;justify-content:center}
+.lrow>div+div{border-left:1px solid var(--line);padding-left:12px}
+.lrow small{display:block;font-size:11.5px;color:var(--sub);margin-bottom:3px}.lrow b{font-size:15px}
+.lrow b.g{color:var(--gd)}.lrow b.r{color:var(--red)}
+.lfoot{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:12px}
+.rec .b2{font-size:15px;font-weight:700}.rec .b2 small{display:block;font-size:11.5px;color:var(--sub);font-weight:400;margin-top:1px}
+.emg{display:flex;align-items:center;gap:12px;width:100%;margin-top:18px;padding:15px 16px;border-radius:20px;background:#fff;border:1.5px solid #f3c9c4;box-shadow:0 4px 16px rgba(224,83,74,.07);position:relative;z-index:1}
+.emg .eb{flex:none;font-size:12.5px;font-weight:800;color:#fff;background:var(--red);border-radius:10px;padding:6px 9px;letter-spacing:.02em}
+.emg b{display:block;font-size:15px;color:#b4322a}.emg small{display:block;font-size:11.5px;color:var(--sub);margin-top:3px;line-height:1.4}
+.emg.dis{border-color:#e6eaed;box-shadow:none}.emg.dis .eb{background:#c3c9cf}.emg.dis b{color:#8a949e}
+.agree{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.5;margin-top:14px;color:#3d4753}
+.agree input{margin-top:3px;width:17px;height:17px;accent-color:var(--red);flex:none}
+.ntf{position:absolute;left:12px;right:12px;top:calc(var(--sat) + 10px);z-index:90;background:rgba(23,33,46,.95);color:#fff;border-radius:18px;padding:12px 14px;display:flex;gap:12px;align-items:center;
+ transform:translateY(-140%);transition:transform .35s cubic-bezier(.2,.9,.3,1.2);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.ntf.on{transform:none}
+.ntf .ni{width:36px;height:36px;border-radius:12px;background:var(--g);display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}
+.ntf.bad .ni{background:var(--red)}.ntf.amb .ni{background:var(--amb)}
+.ntf b{display:block;font-size:14px}.ntf span{font-size:12px;opacity:.8}
+/* 전달 경로 (측정기 → 단말 → 서버 → 폰) */
+.pipe{display:flex;align-items:flex-start;margin:4px 0 2px}
+.pn{flex:1;text-align:center;position:relative;font-size:11px;color:var(--sub)}
+.pn .o{width:40px;height:40px;border-radius:50%;margin:0 auto 5px;background:#eef1f3;display:flex;align-items:center;justify-content:center;font-size:18px;position:relative;z-index:1}
+.pn.ok .o{background:var(--gl)}.pn.run .o{background:var(--gl);animation:pp 1s infinite}.pn.fail .o{background:var(--redl)}
+.pn.ok{color:var(--gd)}.pn.fail{color:var(--red)}
+.pn+.pn::before{content:'';position:absolute;top:20px;right:calc(50% + 20px);width:calc(100% - 40px);height:2px;background:#dfe5e9}
+.pn.ok+.pn.ok::before,.pn.ok+.pn.run::before{background:var(--g2)}
+@keyframes pp{50%{box-shadow:0 0 0 6px rgba(47,185,133,.18)}}
+.vsteps{width:100%;text-align:left;margin-top:18px;background:#fff;border-radius:18px;padding:6px 14px}
+.vs{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+.vs:last-child{border:0}
+.vs .i{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:#eef1f3;margin-top:1px}
+.vs.ok .i{background:var(--g)}.vs.run .i{background:var(--gl)}.vs.fail .i{background:var(--red)}
+.vs.run .i::after{content:'';width:12px;height:12px;border-radius:50%;border:2.5px solid #bfe3d1;border-top-color:var(--g);animation:sp .8s linear infinite}
+.vs b{font-size:14px;display:block}.vs.wait b{color:#9aa4ae;font-weight:500}.vs span{font-size:12px;color:var(--sub)}
+.vs .tm{margin-left:auto;font-size:11.5px;color:#9aa4ae;white-space:nowrap}
+.blowcard{width:100%;margin-top:14px;border-radius:20px;padding:16px;background:linear-gradient(120deg,#2b9f78,#1d7a5c);color:#fff;text-align:left}
+.blowcard b{font-size:18px;display:block}.blowcard p{font-size:13px;opacity:.9;margin-top:4px;line-height:1.5}
+.sys{padding:16px 18px}
+.sysrow{display:flex;align-items:center;gap:12px;padding:10px 0}
+.sysrow+.sysrow{border-top:1px dashed var(--line)}
+.sysrow .th{width:50px;height:50px;border-radius:14px;background:var(--gl2);display:flex;align-items:center;justify-content:center;flex:none}
+.gauge{height:8px;border-radius:6px;background:#eef1f3;overflow:hidden;margin-top:6px}
+.gauge i{display:block;height:100%;background:var(--g);border-radius:6px}
+.gauge.warn i{background:var(--amb)}.gauge.bad i{background:var(--red)}
+.req{display:flex;align-items:center;gap:12px;padding:14px 16px;width:100%;text-align:left;border-bottom:1px solid var(--line)}
+.req:last-child{border:0}
+.req .ri{width:42px;height:42px;border-radius:12px;background:var(--gl2);display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.tl2{margin:8px 0 4px;padding-left:4px}
+.tl2 div{position:relative;padding:0 0 14px 22px;font-size:13.5px}
+.tl2 div::before{content:'';position:absolute;left:0;top:3px;width:11px;height:11px;border-radius:50%;background:#dfe5e9}
+.tl2 div::after{content:'';position:absolute;left:5px;top:16px;bottom:0;width:1.5px;background:#e6eaed}
+.tl2 div:last-child::after{display:none}
+.tl2 div.ok::before{background:var(--g)}.tl2 div.cur::before{background:#fff;border:3px solid var(--g);width:7px;height:7px}
+.tl2 div span{display:block;font-size:11.5px;color:var(--sub)}
+.fld{display:block;font-size:12.5px;color:var(--sub);margin:14px 0 6px}
+.inp{width:100%;height:46px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#fff;font-size:14px}
+textarea.inp{height:84px;padding:10px 12px;resize:none}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opts button{padding:8px 12px;border-radius:18px;background:#f0f3f5;font-size:13px;color:#4a5562}
+.opts button.on{background:var(--g);color:#fff;font-weight:700}
+.net{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--gd)}
+.net::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor}
+.net.slow{color:var(--amb)}.net.down{color:var(--red)}
+
+</style>
+</head>
+<body>
+<div class="wrap"><div class="phone"><div class="scr" id="scr">
+
+  <section class="view" id="v-home"></section>
+  <section class="view" id="v-hist"></section>
+  <section class="view" id="v-dev"></section>
+  <section class="view" id="v-rep"></section>
+
+  <nav class="tabbar" id="tabbar"></nav>
+
+  <!-- 측정 흐름 -->
+  <section class="login" id="login"></section>
+  <section class="flow" id="flow">
+    <div class="fhd"><button onclick="flowClose()" aria-label="닫기">✕</button><b id="fTitle">음주 측정</b><span style="width:40px"></span></div>
+    <div class="steps" id="fSteps"></div>
+    <div class="fbody" id="fBody"></div>
+    <div id="fFoot" style="display:flex;flex-direction:column;gap:8px;margin-top:12px"></div>
+  </section>
+
+  <div class="sbg" id="sbg" onclick="if(event.target===this)closeSheet()"><div class="sheet" id="sheet"></div></div>
+  <div class="toast" id="toast"></div>
+</div></div></div>
+
+<script>
+/* ================= 기본 ================= */
+const $=q=>document.querySelector(q);
+const pad=n=>String(n).padStart(2,'0');
+const WD=['일','월','화','수','목','금','토'];
+const DAY=864e5,LIMIT=0.03; /* 0.03% 이상: 시동 불가 (도로교통법 면허정지 기준) */
+const fmtB=b=>b.toFixed(2);
+const ymd=d=>{d=new Date(d);return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const hm=d=>{d=new Date(d);return pad(d.getHours())+':'+pad(d.getMinutes())};
+const md=d=>{d=new Date(d);return `${d.getMonth()+1}월 ${d.getDate()}일 (${WD[d.getDay()]})`};
+const sod=d=>{d=new Date(d);d.setHours(0,0,0,0);return d};
+let tt;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2000)}
+function openSheet(h){$('#sheet').innerHTML=h;$('#sbg').classList.add('on')}
+function closeSheet(){$('#sbg').classList.remove('on')}
+function sheetHd(t){return `<div class="sh">${t}<button onclick="closeSheet()">✕</button></div>`}
+
+/* 시연용 시각 조정: 인증 유효시간 정책 확인용 */
+function now(){const n=new Date();if(S.demoHour==null)return n;const d=new Date(n);d.setHours(S.demoHour,S.demoHour===17?59:5,0,0);return d}
+
+/* ================= 상태 ================= */
+const S={tab:'home',recs:[],car:'아반떼 12가3456',
+ sys:{br:{name:'SafeBac Pro',sn:'8F23-4D1A-9C7E',fw:'v1.2.3',link:true,cal:'2026-09-02',cart:{used:412,max:500,date:'2026-08-20'}}},
+ emg:{limit:1,period:'month'},reqs:[],notif:{done:true,expire:true,remind:true,cart:true},auth:null,ign:false,histDay:null,histMode:'week',repMonth:null,demoHour:null,demoRes:'auto',demoNet:'ok'};
+function seed(){
+  const out=[];const t0=sod(new Date());
+  for(let i=27;i>=0;i--){const d=new Date(+t0-i*DAY);const wd=d.getDay();
+    if(wd===0||(wd===6&&i%2))continue;
+    if(i===0)continue;
+    const n=wd===6?1:(i%3===0?3:i%2?2:1);
+    const times=[[8,12],[13,15],[20,42]].slice(0,n);
+    times.forEach(([h,m],k)=>{const ts=+d+((h*60+m+((i*7+k*11)%9))*6e4);
+      let b=0;if(i===13&&k===0)b=0.042;else if(i===13&&k===1)b=0.012;else if(i%9===2&&k===0)b=0.01;
+      out.push({id:ts,ts,bac:b,kind:'drive'})});
+  }
+  {const d=sod(new Date(+sod(new Date())-26*DAY));if(d.getDay()===0)d.setDate(d.getDate()-1);const ts=+d+(7*60+48)*6e4;out.push({id:ts,ts,bac:0,kind:'emg',reason:'측정기 고장·오류',memo:'측정기 화면 꺼짐',hold:hm(ts+3600e3)+'까지'})}
+  return out.sort((a,b)=>b.ts-a.ts);
+}
+
+/* ================= 인증 유효시간 정책 =================
+   - 업무시간(09:00~18:00) 정상 인증: 60분 유지, 단 18:00을 넘기지 않음
+   - 업무시간 외 정상 인증: 유지 없음 → 이번 시동 1회만 허용, 서버가 즉시 잠금(OFF) 처리
+*/
+function authPolicy(ts){const d=new Date(ts),h=d.getHours(),e18=new Date(d);e18.setHours(18,0,0,0);
+  if(h>=9&&h<18){const exp=Math.min(+d+60*6e4,+e18);return {exp,oneShot:false,note:(+e18<+d+60*6e4)?'업무시간 종료(18:00)로 만료 시각이 앞당겨졌어요':'업무시간 · 정상 인증 후 60분 유지'}}
+  return {exp:+d,oneShot:true,note:'업무시간 외 · 인증 유지 없음 (이번 시동 1회만 허용)'}}
+function authValid(){const a=S.auth;if(!a)return false;if(a.oneShot)return !a.used;return +now()<a.exp}
+function remainTxt(){const a=S.auth;if(!a||a.oneShot)return '';const m=Math.max(0,Math.ceil((a.exp-now())/6e4));return m>=60?`${Math.floor(m/60)}시간${m%60?' '+m%60+'분':''}`:`${m}분`}
+function checkExpire(){if(S.ign&&S.auth&&!S.auth.oneShot&&+now()>=S.auth.exp){S.ign=false;save();notify('인증 유효시간 종료','시동이 다시 잠겼어요. 운전하려면 다시 측정해 주세요','bad');render()}}
+
+/* ================= 마스코트 (SVG) ================= */
+let MID=0;
+function mascot(w,{prop='',mood='smile',wave=true}={}){const u='m'+(++MID);
+  const eyes=mood==='happy'?'<path d="M47 58q5-6 10 0M71 58q5-6 10 0" stroke="#1d2b28" stroke-width="3.2" fill="none" stroke-linecap="round"/>'
+    :'<ellipse cx="52" cy="58" rx="3.6" ry="5" fill="#1d2b28"/><ellipse cx="76" cy="58" rx="3.6" ry="5" fill="#1d2b28"/>';
+  const props={
+   shield:`<g transform="translate(4 70)"><path d="M22 0l22 8v18c0 14-10 24-22 30C10 50 0 40 0 26V8z" fill="url(#${u}mg3)"/><path d="M12 26l7 7 14-14" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`,
+   bt:`<g transform="translate(2 74)"><circle cx="22" cy="22" r="22" fill="url(#${u}mg3)"/><path d="M15 15l14 13-7 6V10l7 6-14 13" stroke="#fff" stroke-width="3" fill="none" stroke-linejoin="round"/></g>`,
+   dev:`<g transform="translate(6 70) rotate(-12)"><rect width="24" height="46" rx="8" fill="#f4f6f7" stroke="#d7dde1"/><rect x="5" y="6" width="14" height="18" rx="4" fill="#1e2a2c"/><circle cx="12" cy="36" r="2" fill="#c8d0d4"/></g>`}[prop]||'';
+  return `<svg class="mascot" width="${w}" height="${w*1.08}" viewBox="0 0 128 138" aria-hidden="true"><defs>
+  <radialGradient id="${u}mg1" cx="38%" cy="30%" r="75%"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#eef3f4"/><stop offset="1" stop-color="#c3d2d6"/></radialGradient>
+  <linearGradient id="${u}mg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4fd29b"/><stop offset="1" stop-color="#1c9466"/></linearGradient>
+  <linearGradient id="${u}mg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3cc58b"/><stop offset="1" stop-color="#178459"/></linearGradient></defs>
+  <ellipse cx="66" cy="132" rx="34" ry="5" fill="rgba(30,80,60,.18)"/>
+  <path d="M84 14c8-8 20-8 24-2-6 8-16 10-24 2z" fill="url(#${u}mg2)"/>
+  <path d="M66 18c-26 0-42 18-42 42 0 18 8 30 18 38l-2 22c0 6 8 8 12 4l4-14h22l4 14c4 4 12 2 12-4l-2-22c10-8 18-20 18-38 0-24-18-42-44-42z" fill="url(#${u}mg1)" stroke="#c9d6da" stroke-width="1.4"/>
+  ${wave?'<path d="M104 66c8-6 14-14 12-20-2-4-8-2-10 4l-4 10z" fill="url(#${u}mg1)" stroke="#c9d6da" stroke-width="1.4"/>':'<path d="M106 72c6 2 8 8 4 12-4 2-8 0-8-4z" fill="url(#${u}mg1)" stroke="#c9d6da" stroke-width="1.4"/>'}
+  <path d="M28 76c-6 2-8 8-4 12 4 2 8 0 8-4z" fill="url(#${u}mg1)" stroke="#c9d6da" stroke-width="1.4"/>
+  ${eyes}<path d="M58 70q6 6 12 0" stroke="#1d2b28" stroke-width="3" fill="none" stroke-linecap="round"/>
+  ${prop?`<g>${props}</g>`:''}</svg>`}
+
+/* 아이콘 */
+const IC={
+ drop:(c='#2fb985',s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 2C9 7 5 10.5 5 15a7 7 0 0 0 14 0c0-4.5-4-8-7-13z" fill="${c}"/><path d="M9 15.5a3 3 0 0 0 3 3" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".8"/></svg>`,
+ car:(c='#1f9e6e',s=26)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M5 11l1.8-4.5A2 2 0 0 1 8.7 5h6.6a2 2 0 0 1 1.9 1.5L19 11a2 2 0 0 1 2 2v4a1 1 0 0 1-1 1h-1v1.5a1.5 1.5 0 0 1-3 0V18H8v1.5a1.5 1.5 0 0 1-3 0V18H4a1 1 0 0 1-1-1v-4a2 2 0 0 1 2-2z" fill="${c}"/><circle cx="7" cy="14" r="1.4" fill="#fff"/><circle cx="17" cy="14" r="1.4" fill="#fff"/><path d="M7 10.5l1.2-3h7.6l1.2 3z" fill="#fff" opacity=".85"/></svg>`,
+ breath:(c='#fff',s=34)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="6" y="3" width="10" height="18" rx="3.5" fill="${c}"/><rect x="8" y="5.5" width="6" height="6" rx="1.5" fill="#1d7a5c"/><circle cx="11" cy="14.5" r="1.2" fill="#1d7a5c"/><path d="M10 17.5h2" stroke="#1d7a5c" stroke-width="1.6" stroke-linecap="round"/><rect x="16" y="5" width="3" height="4" rx="1" fill="${c}"/></svg>`,
+ check:(c='#fff',s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="${c}" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ x:(c='#fff',s=16)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="${c}" stroke-width="3" stroke-linecap="round"/></svg>`,
+ cal:(c='#5f6b78',s=20)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="1.8"><rect x="4" y="5" width="16" height="15" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/></svg>`,
+ shield:(c='#1f9e6e',s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 2l8 3v6c0 5.5-3.5 9.5-8 11-4.5-1.5-8-5.5-8-11V5z" fill="${c}"/><path d="M8.5 12l2.5 2.5 4.5-5" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ gear:(c='#1f9e6e',s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zm8.5 5.2l-1.8-.4a7 7 0 0 1-.7 1.7l1 1.6-1.9 1.9-1.6-1a7 7 0 0 1-1.7.7l-.4 1.8h-2.7l-.4-1.8a7 7 0 0 1-1.7-.7l-1.6 1-1.9-1.9 1-1.6a7 7 0 0 1-.7-1.7l-1.8-.4v-2.7l1.8-.4a7 7 0 0 1 .7-1.7l-1-1.6 1.9-1.9 1.6 1a7 7 0 0 1 1.7-.7l.4-1.8h2.7l.4 1.8a7 7 0 0 1 1.7.7l1.6-1 1.9 1.9-1 1.6a7 7 0 0 1 .7 1.7l1.8.4z" fill="${c}"/></svg>`,
+ bell:(c='#1f9e6e',s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6v4l-2 3h16l-2-3V9a6 6 0 0 0-6-6z" fill="${c}"/><path d="M9.5 18.5a2.5 2.5 0 0 0 5 0" fill="${c}"/></svg>`,
+ doc:(c='#1f9e6e',s=22)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="3" fill="${c}"/><path d="M8.5 8h7M8.5 12h7M8.5 16h4" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg>`,
+ bars:(c='#1f9e6e',s=24)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24"><rect x="4" y="11" width="4" height="9" rx="1" fill="${c}"/><rect x="10" y="6" width="4" height="14" rx="1" fill="${c}"/><rect x="16" y="9" width="4" height="11" rx="1" fill="${c}"/></svg>`,
+ lock:(open,c='#7f8b98',s=36)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none"><rect x="4.5" y="10.5" width="15" height="10.5" rx="3" fill="${c}"/><path d="${open?'M8 10.5V7.5a4 4 0 0 1 7.6-1.8':'M8 10.5V7.5a4 4 0 0 1 8 0v3'}" stroke="${c}" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="15.2" r="1.6" fill="#fff"/><path d="M12 16.4v1.6" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+ chevR:(c='#a9b2bd',s=16)=>`<svg class="ic-chev" width="${s}" height="${s}" viewBox="0 0 16 16"><path d="M6 3.5L10.5 8 6 12.5" stroke="${c}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ chevD:(c='#6b7684',s=14)=>`<svg class="cd" width="${s}" height="${s}" viewBox="0 0 16 16"><path d="M3.5 6L8 10.5 12.5 6" stroke="${c}" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+ device:(s=96)=>{const u='d'+(++MID);return `<svg width="${s*.6}" height="${s}" viewBox="0 0 60 100"><defs><linearGradient id="${u}dv" x1="0" x2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e3e8eb"/></linearGradient></defs>
+  <rect x="2" y="14" width="22" height="10" rx="4" fill="url(#${u}dv)" stroke="#d2d9dd"/><rect x="14" y="6" width="40" height="88" rx="18" fill="url(#${u}dv)" stroke="#d2d9dd"/>
+  <rect x="22" y="18" width="24" height="34" rx="9" fill="#1c2628"/><circle cx="34" cy="35" r="7" fill="none" stroke="#2fb985" stroke-width="2"/><path d="M34 74c-2 3-3 4-3 5.5a3 3 0 0 0 6 0c0-1.5-1-2.5-3-5.5z" fill="#c9d1d5"/></svg>`}
+};
+
+/* ================= 탭바 ================= */
+const TABS=[['home','홈','<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor"/>'],
+ ['hist','측정 기록','<circle cx="12" cy="12" r="9" fill="currentColor"/><path d="M12 7v5.5l3.5 2" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>'],
+ ['dev','기기 관리','<rect x="7" y="2.5" width="10" height="19" rx="4" fill="currentColor"/><rect x="9.3" y="5.5" width="5.4" height="6.5" rx="1.6" fill="#fff"/><circle cx="12" cy="15.8" r="1.3" fill="#fff"/>'],
+ ['rep','안전 리포트','<path d="M12 2l8 3v6c0 5.5-3.5 9.5-8 11-4.5-1.5-8-5.5-8-11V5z" fill="currentColor"/><path d="M8.5 12l2.5 2.5 4.5-5" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>']];
+function drawTabs(){$('#tabbar').innerHTML=TABS.map(([k,l,p])=>`<button class="${S.tab===k?'on':''}" onclick="goTab('${k}')"><svg viewBox="0 0 24 24">${p}</svg>${l}</button>`).join('')}
+function goTab(k){S.tab=k;document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+k));drawTabs();render();$('#v-'+k).scrollTop=0}
+function render(){({home:rHome,hist:rHist,dev:rDev,rep:rRep})[S.tab]()}
+const hills=(top)=>`<svg class="hill" style="top:${top}px" viewBox="0 0 390 120" preserveAspectRatio="none" height="120" width="100%"><path d="M0 70c40-40 90-40 120 0 60-50 120-50 170-10 40-30 80-20 100 0v60H0z" fill="#e3f4ec" opacity=".8"/><path d="M0 95c80-30 200-30 390-10v35H0z" fill="#eef8f3"/></svg>`;
+
+/* ================= 홈 ================= */
+function todayRecs(){const k=ymd(now());return S.recs.filter(r=>ymd(r.ts)===k)}
+const isOk=r=>r.bac<LIMIT;
+function lastMeas(){return S.recs.find(r=>r.kind!=='test')}
+/* 긴급 해제: 서버 설정값(허용 횟수·기간)으로 제어 */
+function emgPeriodStart(){const n=now();return S.emg.period==='day'?sod(n):new Date(n.getFullYear(),n.getMonth(),1)}
+function emgLeft(){const st=+emgPeriodStart();return Math.max(0,S.emg.limit-S.recs.filter(r=>r.kind==='emg'&&r.ts>=st).length)}
+const PER={day:'오늘',month:'이번 달'};
+function rHome(){
+  const n=now(),valid=authValid()&&S.ign,last=lastMeas(),failNow=!valid&&last&&last.kind==='drive'&&!isOk(last)&&ymd(last.ts)===ymd(n);
+  const st=valid?'ok':failNow?'bad':'idle';
+  const a=S.auth;let pct=0;if(valid&&a&&!a.oneShot){pct=Math.max(0,Math.min(100,(a.exp-now())/(a.exp-a.ts)*100))}
+  const chip=valid?(a.oneShot?'이번 시동 1회':`${hm(a.exp)}까지`):failNow?'측정 실패':'인증 필요';
+  const head=valid?'시동 잠금이<br>해제됐어요':'시동이<br>잠겨 있어요';
+  const sub=valid?(a.emg?'긴급 해제로 운행할 수 있어요.':a.oneShot?'업무시간 외 인증이라 이번 시동만 허용돼요.':`${remainTxt()} 동안 시동을 걸 수 있어요.`)
+    :failNow?'알코올이 감지되어 잠금이 유지돼요.':'차량 음주측정기로 측정하면 자동으로 해제돼요.';
+  const recent=S.recs.filter(r=>r.kind!=='test').slice(0,3),left=emgLeft();
+  $('#v-home').innerHTML=hills(210)+`
+  <div class="top"><div><div class="h1">오늘의 시동 상태</div><p class="lead">안전한 오늘을 위한<br>당신의 선택</p></div>
+   <button class="pill" onclick="goTab('hist')">${IC.cal('#6b7684',17)}<span>${n.getMonth()+1}월 ${n.getDate()}일 (${WD[n.getDay()]})</span></button></div>
+  <div class="hero">
+   <div class="ring ${st} ${valid&&!a.oneShot?'hasarc':''}">
+    <div class="lk">${IC.lock(valid,st==='bad'?'#e0534a':st==='ok'?'#1f9e6e':'#7f8b98',40)}</div>
+    <div class="v2">${valid?'해제':'잠금'}</div>
+    <span class="chip ${st==='bad'?'red':st==='idle'?'gray':''}">${valid?IC.check('#146b4c',12):''}${chip}</span>
+    ${valid&&!a.oneShot?`<svg class="arc" viewBox="0 0 200 200"><circle cx="100" cy="100" r="96.5" fill="none" stroke="#1f9e6e" stroke-width="7" stroke-linecap="round" stroke-dasharray="${606*pct/100} 606" transform="rotate(-90 100 100)"/></svg>`:''}
+   </div>
+   <div class="hr"><p class="say2 ${st}">${head}</p><p class="say3">${sub}</p><div class="hm">${mascot(96,{prop:'shield'})}</div></div>
+  </div>
+  <div class="sec"><b>최근 측정 결과</b><span class="small muted">단말 판정 · 서버 인증</span></div>
+  ${last?lastCard(last):`<div class="card" style="padding:22px;text-align:center" ><span class="muted">아직 측정 기록이 없어요.</span></div>`}
+  <div class="sec"><b>측정 기록</b><button class="lnk" onclick="goTab('hist')">전체 보기${IC.chevR()}</button></div>
+  <div class="card">${recent.map(recRow).join('')||'<p class="muted" style="padding:24px;text-align:center">측정 기록이 없어요.</p>'}</div>
+  <button class="emg ${valid||!left?'dis':''}" onclick="emgSheet()">
+   <span class="eb">긴급</span><span style="flex:1;text-align:left"><b>측정 없이 시동 잠금 해제</b><small>${valid?'이미 잠금이 해제되어 있어요':`${PER[S.emg.period]} 남은 횟수 ${left} / ${S.emg.limit}회 · 관리자에게 기록이 전달돼요`}</small></span>${IC.chevR(valid||!left?'#c3c9cf':'#e0534a')}</button>`;
+}
+function lastCard(r){const emg=r.kind==='emg',ok=emg||isOk(r),p=authPolicy(r.ts),a=S.auth,cur=a&&a.ts===r.ts&&authValid()&&S.ign;
+  const ago=agoTxt(r.ts);
+  return `<button class="card lastc" onclick="recSheet(${r.id})">
+   <div class="between"><span class="lt">${ymd(r.ts)===ymd(now())?'오늘':md(r.ts)} ${hm(r.ts)} <i>${ago}</i></span><span class="chip ${emg?'amb':ok?'':'red'}">${emg?'긴급 해제':ok?'측정 성공':'측정 실패'}</span></div>
+   <div class="lrow"><div><small>측정 결과</small><b class="${emg?'':ok?'g':'r'}">${emg?'측정 없음':ok?'정상':'알코올 감지'}</b></div>
+    <div><small>서버 인증</small><b>${ok?'인증 완료':'인증 안 됨'}</b></div>
+    <div><small>인증 유지</small><b>${!ok?'-':(emg?(r.hold||'-'):p.oneShot?'1회 허용':hm(p.exp)+'까지')}</b></div></div>
+   <div class="lfoot">${cur?`<span class="net">현재 적용 중</span>`:ok?`<span class="muted">인증 종료됨</span>`:`<span style="color:var(--red)">시동 잠금 유지</span>`}${IC.chevR()}</div></button>`}
+function recRow(r){const emg=r.kind==='emg',ok=emg||isOk(r);
+  return `<button class="rec" onclick="recSheet(${r.id})"><span><div class="d">${md(r.ts)}</div><div class="t">${hm(r.ts)}</div></span>
+ <span class="b2">${emg?'긴급 해제':ok?'정상':'알코올 감지'}<small>${emg?'측정 없음':ok?'인증 완료':'인증 안 됨'}</small></span><span class="chip ${emg?'amb':ok?'':'red'}">${emg?'긴급':ok?'성공':'실패'}</span>${IC.chevR()}</button>`}
+function recSheet(id){const r=S.recs.find(x=>x.id===id);if(!r)return;const emg=r.kind==='emg',ok=emg||isOk(r);const p=authPolicy(r.ts);
+  const kv=(k,v,c)=>`<div class="kv"><span>${k}</span><b ${c?`style="color:${c}"`:''}>${v}</b></div>`;
+  openSheet(sheetHd(emg?'긴급 해제 상세':r.kind==='test'?'테스트 측정 상세':'측정 상세')+`<div class="sbody">
+   ${kv(emg?'해제 일시':'측정 일시',md(r.ts)+' '+hm(r.ts))}
+   ${emg?kv('사유',r.reason||'-')+kv('메모',r.memo||'-')+kv('인증 유지',r.hold||'-')+kv('관리자 알림','전송됨'):
+   kv('측정 결과 (단말 판정)',r.kind==='test'?'테스트':ok?'성공 · 정상':'실패 · 알코올 감지',r.kind==='test'?'':ok?'var(--gd)':'var(--red)')+
+   (r.kind==='test'?kv('시동 처리','시동과 연결되지 않음'):kv('서버 인증',ok?'인증 완료':'인증 안 됨 · 잠금 유지')+(ok?kv('인증 유지',p.oneShot?'유지 없음 (이번 시동 1회)':hm(p.exp)+'까지'):''))+
+   kv('측정기',S.sys.br.name+' · SN '+S.sys.br.sn)}
+   ${kv('차량',S.car)}</div>`)}
+function emgSheet(){const left=emgLeft(),valid=authValid()&&S.ign;
+  if(valid){toast('이미 시동 잠금이 해제되어 있어요');return}
+  if(!left){openSheet(sheetHd('긴급 해제')+`<div class="sbody"><div class="info bad">${PER[S.emg.period]} 긴급 해제 가능 횟수(${S.emg.limit}회)를 모두 사용했어요.</div>
+    <p class="small muted" style="margin-top:10px;line-height:1.6">허용 횟수는 관리자 서버 설정값이에요. 추가 해제가 필요하면 관리자에게 요청해 주세요.</p>
+    <button class="big-btn" style="margin-top:16px" onclick="closeSheet();toast('관리자에게 긴급 해제 승인을 요청했어요')">관리자에게 요청하기</button></div>`);return}
+  RQ={why:'측정기 고장·오류'};
+  openSheet(sheetHd('긴급 시동 잠금 해제')+`<div class="sbody">
+   <div class="info warn">음주 측정 없이 시동 잠금을 풀어요. <b>${PER[S.emg.period]} ${left}회</b> 남았고, 사용 기록과 사유가 관리자에게 바로 전달돼요.</div>
+   <span class="fld">사유</span>${optBtns('why',['측정기 고장·오류','응급 상황','차량 이동 필요','기타'])}
+   <span class="fld">메모 (선택)</span><textarea class="inp" id="emgMemo" maxlength="200" placeholder="상황을 간단히 적어 주세요"></textarea>
+   <label class="agree"><input type="checkbox" id="emgOk"> 음주 상태가 아니며, 운전 책임이 본인에게 있음을 확인합니다.</label>
+   <button class="big-btn red" style="margin-top:14px" onclick="doEmg()">긴급 해제하기</button></div>`)}
+function doEmg(){if(!$('#emgOk').checked){toast('확인 항목에 체크해 주세요');return}
+  const ts=+now(),p=authPolicy(ts),hold=p.oneShot?'이번 시동 1회':hm(p.exp)+'까지';
+  S.recs.unshift({id:ts,ts,bac:0,kind:'emg',reason:RQ.why,memo:$('#emgMemo').value.trim(),hold});
+  S.auth={ts,exp:p.exp,oneShot:p.oneShot,note:'긴급 해제',used:false,emg:1};S.ign=true;save();closeSheet();rHome();
+  notify('긴급 해제 완료',`${hold} 시동을 걸 수 있어요 · 관리자에게 전달됨`,'amb')}
+/* 앱 내 알림 배너 (서버 푸시 표시) */
+let nt_;function notify(t,s,k){let e=$('#ntf');if(!e){e=document.createElement('div');e.id='ntf';$('#scr').appendChild(e)}
+  e.className='ntf '+(k||'');e.innerHTML=`<span class="ni">${k==='bad'?IC.lock(false,'#fff',18):k==='amb'?'!':IC.lock(true,'#fff',18)}</span><div><b>${t}</b><span>${s}</span></div>`;
+  requestAnimationFrame(()=>e.classList.add('on'));clearTimeout(nt_);nt_=setTimeout(()=>e.classList.remove('on'),3800)}
+/* 시연: 차량 음주측정기에서 측정 → 단말 판정 → 서버 인증 → 앱 반영 */
+function simMeasure(ok){const ts=+now(),bac=ok?0:0.047;S.recs.unshift({id:ts,ts,bac,kind:'drive'});S.sys.br.cart.used=Math.min(S.sys.br.cart.max,S.sys.br.cart.used+1);
+  if(ok){const p=authPolicy(ts);S.auth={ts,exp:p.exp,oneShot:p.oneShot,note:p.note,used:false};S.ign=true;
+    notify('음주측정 인증 완료',p.oneShot?'업무시간 외 · 이번 시동 1회 허용':`${hm(p.exp)}까지 시동을 걸 수 있어요`)}
+  else{S.auth=null;S.ign=false;notify('음주측정 실패','알코올이 감지되어 시동 잠금이 유지돼요','bad')}
+  save();render()}
+
+/* ================= 측정 기록 ================= */
+function weekStart(d){const x=sod(d);return new Date(+x-x.getDay()*DAY)}
+function dayStat(k){const rs=S.recs.filter(r=>r.kind==='drive'&&ymd(r.ts)===k);if(!rs.length)return '';return rs.some(r=>r.bac>=LIMIT)?'bad':'ok'}
+function rHist(){
+  const sel=S.histDay?new Date(S.histDay+'T00:00'):sod(now());const ws=weekStart(sel);const tk=ymd(now());
+  const days=[...Array(7)].map((_,i)=>new Date(+ws+i*DAY));
+  const wrs=S.recs.filter(r=>r.kind==='drive'&&r.ts>=+ws&&r.ts<+ws+7*DAY);
+  const okR=wrs.length?Math.round(wrs.filter(r=>r.bac<LIMIT).length/wrs.length*100):0;
+  const k=ymd(sel),drs=S.recs.filter(r=>ymd(r.ts)===k);
+  const wkNo=Math.ceil((sel.getDate()+new Date(sel.getFullYear(),sel.getMonth(),1).getDay())/7);
+  const strip=S.histMode==='week'?`<div class="wk">${days.map(d=>{const kk=ymd(d),s=dayStat(kk),fut=kk>tk;
+    return `<div class="dcell" onclick="${fut?'':`S.histDay='${kk}';rHist()`}"><div class="n ${d.getDay()===0?'':''}">${WD[d.getDay()]}</div><div class="dd ${kk===tk?'today':''}">${d.getDate()}</div>
+    <div class="dot ${s} ${kk===k?'sel':''}">${s==='ok'?IC.check('#fff',15):s==='bad'?IC.x('#fff',13):''}</div></div>`}).join('')}</div>`
+   :calGrid(sel);
+  $('#v-hist').innerHTML=hills(150)+`
+  <div class="top"><div><div class="h1">측정 기록</div><p class="lead">당신의 안전한 오늘이<br>더 나은 내일을 만듭니다.</p></div>
+   <button class="pill" onclick="monthSheet('hist')">${IC.cal('#6b7684',17)}<span>${sel.getFullYear()}년 ${sel.getMonth()+1}월</span>${IC.chevD()}</button></div>
+  <div style="display:flex;align-items:center;margin-top:10px;position:relative;z-index:1">
+   <div style="flex:1;background:rgba(255,255,255,.7);border-radius:18px;padding:14px 16px"><b style="color:var(--gd)">${okR===100||!wrs.length?'지금까지 잘 지켜오고 있어요!':'한 번 더 확인하는 습관이 필요해요'}</b><p class="small muted" style="margin-top:4px;line-height:1.5">꾸준한 측정이<br>안전한 습관을 만듭니다.</p></div>
+   <div style="margin:-14px -4px 0 0">${mascot(96,{prop:'shield'})}</div></div>
+  <div class="card" style="padding:18px 16px;margin-top:4px">
+   <div class="between" style="margin-bottom:14px"><b style="font-size:20px">${S.histMode==='week'?`${sel.getMonth()+1}월 ${wkNo}주차`:`${sel.getMonth()+1}월`}</b>
+    <div class="seg"><button class="${S.histMode==='week'?'on':''}" onclick="S.histMode='week';rHist()">주간</button><button class="${S.histMode==='month'?'on':''}" onclick="S.histMode='month';rHist()">월간</button></div></div>
+   ${strip}
+   ${S.histMode==='week'?`<div class="stats"><div><span class="ci">${IC.drop('#2fb985',18)}</span><div><small>이번 주 측정 횟수</small><b>${wrs.length}<i>회</i></b></div></div>
+    <div><span class="ci">${IC.car('#1f9e6e',18)}</span><div><small>시동 제어 시도</small><b>${wrs.filter(r=>r.bac>=LIMIT).length}<i>회</i></b></div></div>
+    <div><span class="ci">${IC.shield('#1f9e6e',18)}</span><div><small>정상 비율</small><b style="color:var(--g)">${wrs.length?okR+'%':'-'}</b></div></div></div>`:''}
+  </div>
+  <div class="sec"><b style="font-size:20px">${md(sel)}</b><span class="row" style="gap:4px">${drs.length}회 측정<button class="navb" style="margin-left:8px" onclick="moveDay(-1)" aria-label="이전 날">${IC.chevR('#7b8594',16).replace('<svg','<svg style="transform:scaleX(-1)"')}</button><button class="navb" onclick="moveDay(1)" aria-label="다음 날">${IC.chevR('#7b8594',16)}</button></span></div>
+  <div class="card">${drs.map(r=>{const emg=r.kind==='emg',ok=emg||r.bac<LIMIT;const cls=emg?'amb':ok?'':'bad';return `<button class="tl" onclick="recSheet(${r.id})"><span class="tm">${hm(r.ts)}</span><span class="pt ${cls}"></span>
+   <span class="dr ${cls}">${emg?'<b style="color:var(--amb);font-size:15px">!</b>':IC.drop(ok?'#2fb985':'#e0534a',20)}</span><span class="b2">${r.kind==='test'?'테스트 측정':emg?'긴급 해제':ok?'측정 성공':'측정 실패'}<small>${r.kind==='test'?'시동과 무관':emg?(r.reason||'측정 없음'):ok?'정상 · 인증 완료':'알코올 감지'}</small></span>
+   <span class="chip ${r.kind==='test'?'gray':emg?'amb':ok?'':'red'}">${r.kind==='test'?'테스트':IC.car(emg?'#c98a12':ok?'#146b4c':'#e0534a',15)+(ok?' 시동 허용':' 시동 불가')}</span>${IC.chevR()}</button>`}).join('')||'<p class="muted" style="padding:26px;text-align:center">이 날은 측정 기록이 없어요.</p>'}</div>
+  <div class="cheer"><span style="width:58px;height:58px;border-radius:50%;background:#d3efe0;display:flex;align-items:center;justify-content:center;flex:none">${IC.cal('#1f9e6e',28)}</span>
+   <div style="flex:1;position:relative;z-index:1"><b style="color:var(--gd);line-height:1.5;display:block">꾸준한 측정 습관이<br>더 안전한 내일을 만듭니다.</b><span class="small" style="color:var(--gd)">오늘도 수고하셨어요!</span></div>
+   <div style="margin:-10px -6px -18px 0">${mascot(82,{mood:'happy'})}</div></div>`;
+}
+function calGrid(sel){const y=sel.getFullYear(),m=sel.getMonth(),f=new Date(y,m,1),st=new Date(+f-f.getDay()*DAY),tk=ymd(now()),k=ymd(sel);
+  let h=WD.map(w=>`<div class="h">${w}</div>`).join('');
+  for(let i=0;i<42;i++){const d=new Date(+st+i*DAY);if(i>=35&&d.getMonth()!==m)break;const kk=ymd(d),s=dayStat(kk),fut=kk>tk;
+   h+=`<div class="c ${d.getMonth()!==m?'x':''} ${kk===k?'sel':''}" onclick="${fut?'':`S.histDay='${kk}';rHist()`}">${d.getDate()}<i class="${s}"></i></div>`}
+  return `<div class="cal">${h}</div>`}
+function moveDay(d){const c=S.histDay?new Date(S.histDay+'T00:00'):sod(now());const n=new Date(+c+d*DAY+3600e3);if(ymd(n)>ymd(now())){toast('미래 날짜예요');return}S.histDay=ymd(n);rHist()}
+function monthSheet(w){const n=now();const ms=[...Array(6)].map((_,i)=>new Date(n.getFullYear(),n.getMonth()-i,1));
+  openSheet(sheetHd('월 선택')+ms.map(d=>`<button class="opt" onclick="pickMonth('${w}',${d.getFullYear()},${d.getMonth()})">${d.getFullYear()}년 ${d.getMonth()+1}월</button>`).join(''))}
+function pickMonth(w,y,m){closeSheet();const n=now();const last=(y===n.getFullYear()&&m===n.getMonth())?n:new Date(y,m+1,0);
+  if(w==='hist'){S.histDay=ymd(last);rHist()}else{S.repMonth={y,m};rRep()}}
+
+/* ================= 기기 연동 =================
+   구성: 차량 안 음주측정기 ─(유선/근거리)─ 차량 단말(OBD) ─(LTE)─ 서버 ─(푸시)─ 내 폰
+   폰은 측정기와 직접 연결하지 않음. 기기 테스트·소모품·교체 요청만 앱에서 처리 */
+const CART_WARN=50,CART_MONTHS=6;
+function cartInfo(){const c=S.sys.br.cart,left=c.max-c.used,due=new Date(c.date);due.setMonth(due.getMonth()+CART_MONTHS);
+  const days=Math.ceil((due-now())/DAY),lv=left<=0||days<=0?'bad':left<=CART_WARN||days<=14?'warn':'';return {left,max:c.max,due,days,lv,pct:Math.max(0,Math.round(left/c.max*100))}}
+function calInfo(){const d=new Date(S.sys.br.cal);d.setMonth(d.getMonth()+6);const days=Math.ceil((d-now())/DAY);return {due:d,days,lv:days<=0?'bad':days<=30?'warn':''}}
+function agoTxt(t){if(!t)return '-';const m=Math.round((+now()-t)/6e4);return m<1?'방금 전':m<60?m+'분 전':m<1440?Math.floor(m/60)+'시간 전':Math.floor(m/1440)+'일 전'}
+const REQ_T={cart:['🧪','카트리지 교체'],replace:['🔁','기기 교체'],cal:['🎯','검교정'],as:['🛠','고장 점검']};
+const REQ_ST={cart:['접수','확인 완료','발송','교체 완료'],replace:['접수','확인 완료','방문 일정 확정','교체 완료'],cal:['접수','확인 완료','방문 일정 확정','교정 완료'],as:['접수','확인 완료','점검 중','처리 완료']};
+function rDev(){const b=S.sys.br,ci=cartInfo(),cl=calInfo();
+  const open=S.reqs.filter(r=>r.st<3).length;
+  $('#v-dev').innerHTML=hills(130)+`
+  <div class="top"><div><div class="h1">기기 관리</div><p class="lead">차량의 음주측정기 상태를<br>확인하고 관리해 주세요.</p></div><div style="margin:-12px -6px 0 0">${mascot(92,{prop:'dev',wave:false})}</div></div>
+  <div class="card sys" style="margin-top:6px">
+   <div class="between"><b style="font-size:15px;display:flex;align-items:center;gap:6px">${IC.car('#1f9e6e',19)} ${S.car}</b><span class="chip">정상</span></div>
+   <div class="sysrow" style="padding-top:14px"><span class="th" style="width:64px;height:64px">${IC.device(54)}</span><div style="flex:1;min-width:0"><b style="font-size:18px">${b.name}</b><div class="small muted" style="margin-top:2px">음주측정기 · SN ${b.sn}</div><div class="small muted">펌웨어 ${b.fw} · 마지막 측정 ${agoTxt((S.recs.find(r=>r.kind!=='emg')||{}).ts)}</div></div></div>
+   <button class="tbtn" onclick="startTest()">${IC.breath('#1f9e6e',22)} <span style="flex:1;text-align:left">기기 테스트하기</span>${IC.chevR('#1f9e6e')}</button>
+   <p class="small muted" style="margin-top:8px;line-height:1.5">측정기 상태를 원격으로 점검해요. 테스트 측정은 시동과 연결되지 않아요.</p></div>
+  <div class="sec"><b>소모품·교정</b><span></span></div>
+  <div class="card" style="padding:16px 18px">
+   <div class="between"><b>카트리지(센서) 잔여</b><span class="small ${ci.lv==='bad'?'':'muted'}" style="${ci.lv==='bad'?'color:var(--red)':ci.lv==='warn'?'color:var(--amb)':''}">${ci.left}회 / ${ci.max}회</span></div>
+   <div class="gauge ${ci.lv}"><i style="width:${ci.pct}%"></i></div>
+   <div class="small muted" style="margin-top:6px">교체 권장 ${ymd(ci.due).replace(/-/g,'.')} (${ci.days>0?ci.days+'일 남음':'기한 지남'}) · 횟수와 기간 중 먼저 오는 기준</div>
+   <div class="between" style="margin-top:14px"><b>검교정</b><span class="small" style="${cl.lv==='bad'?'color:var(--red)':cl.lv==='warn'?'color:var(--amb)':'color:var(--sub)'}">다음 ${ymd(cl.due).replace(/-/g,'.')} (${cl.days>0?cl.days+'일 남음':'기한 지남'})</span></div>
+  </div>
+  <div class="sec"><b>관리·요청</b><span></span></div>
+  <div class="tiles">
+   <button class="tile" onclick="cartSheet()"><div class="ti" style="font-size:19px">🧪</div><b>카트리지 교체</b><span>${ci.lv?'<b style="color:var(--amb);font-size:12px;display:inline">교체 필요</b>':'잔여 '+ci.left+'회'}</span>${IC.chevR()}</button>
+   <button class="tile" onclick="replaceSheet()"><div class="ti" style="font-size:19px">🔁</div><b>기기 교체 요청</b><span>측정기 고장·파손</span>${IC.chevR()}</button>
+   <button class="tile" onclick="calSheet()"><div class="ti" style="font-size:19px">🎯</div><b>검교정 신청</b><span>6개월 주기</span>${IC.chevR()}</button>
+   <button class="tile" onclick="asSheet()"><div class="ti" style="font-size:19px">🛠</div><b>고장 점검</b><span>A/S 접수</span>${IC.chevR()}</button>
+   <button class="tile" onclick="notifSheet()"><div class="ti">${IC.bell()}</div><b>알림 설정</b><span>${S.notif.done?'결과 수신 알림':'알림 꺼짐'}</span>${IC.chevR()}</button>
+   <button class="tile" onclick="infoSheet()"><div class="ti">${IC.doc()}</div><b>기기 정보</b><span>측정기</span>${IC.chevR()}</button></div>
+  <div class="care"><b>항상 정확한 측정을 위해<br>기기를 깨끗하게 관리해 주세요.</b><button onclick="careSheet()" style="display:inline-flex;align-items:center;gap:2px">관리 방법 보기${IC.chevR('#146b4c',14)}</button>
+   <div style="position:absolute;right:6px;bottom:-8px">${mascot(104,{prop:'dev',mood:'happy',wave:false})}</div></div>
+  <div class="sec"><b>요청 내역</b><span>${open?'진행 중 '+open+'건':''}</span></div>
+  <div class="card">${S.reqs.length?S.reqs.map(r=>`<button class="req" onclick="reqSheet('${r.no}')"><span class="ri">${REQ_T[r.type][0]}</span><span style="flex:1;min-width:0"><b>${r.title}</b><div class="small muted">${r.no} · ${ymd(r.ts).replace(/-/g,'.')}</div></span>
+    <span class="chip ${r.st===3?'gray':''}">${REQ_ST[r.type][r.st]}</span>${IC.chevR()}</button>`).join(''):'<p class="muted" style="padding:22px;text-align:center">요청 내역이 없어요.</p>'}</div>`}
+
+/* 요청 공통 */
+function newReq(type,title,detail){const n=now(),no='RQ-'+ymd(n).replace(/-/g,'')+'-'+String(S.reqs.length+1).padStart(3,'0');
+  S.reqs.unshift({no,type,title,detail,st:0,ts:+n,hist:[+n]});save();return no}
+function reqDone(no){closeSheet();toast('요청이 접수됐어요 · '+no);rDev()}
+function reqSheet(no){const r=S.reqs.find(x=>x.no===no);if(!r)return;const ST=REQ_ST[r.type];
+  openSheet(sheetHd(r.title)+`<div class="sbody"><div class="kv"><span>요청 번호</span><b>${r.no}</b></div><div class="kv"><span>차량</span><b>${S.car}</b></div>
+   ${r.detail.map(([k,v])=>`<div class="kv"><span>${k}</span><b style="text-align:right;max-width:62%">${v}</b></div>`).join('')}
+   <div class="tl2" style="margin-top:14px">${ST.map((t,i)=>`<div class="${i<r.st||r.st===3?'ok':i===r.st?'cur':''}">${t}<span>${r.hist[i]?ymd(r.hist[i]).replace(/-/g,'.')+' '+hm(r.hist[i]):i===r.st+1?'진행 예정':''}</span></div>`).join('')}</div>
+   ${r.st<3?`<button class="big-btn line" onclick="advReq('${r.no}')">시연: 다음 단계로 (${ST[r.st+1]})</button>`:''}
+   ${r.st===0?`<button class="big-btn line" style="margin-top:8px;color:var(--red);border-color:#f2c7c3" onclick="S.reqs=S.reqs.filter(x=>x.no!=='${r.no}');save();closeSheet();rDev();toast('요청을 취소했어요')">요청 취소</button>`:''}</div>`)}
+function advReq(no){const r=S.reqs.find(x=>x.no===no);r.st++;r.hist[r.st]=+now();
+  if(r.st===3){if(r.type==='cart'){S.sys.br.cart={used:0,max:S.sys.br.cart.max,date:ymd(now())};toast('카트리지 교체 완료 · 잔여 횟수가 초기화됐어요')}
+   else if(r.type==='cal'){S.sys.br.cal=ymd(now());toast('검교정 완료 · 다음 교정일이 갱신됐어요')}
+   else if(r.type==='replace'){if(r.target==='측정기'){S.sys.br.sn=Math.random().toString(16).slice(2,6).toUpperCase()+'-'+Math.random().toString(16).slice(2,6).toUpperCase()+'-'+Math.random().toString(16).slice(2,6).toUpperCase();S.sys.br.cart={used:0,max:500,date:ymd(now())};S.sys.br.cal=ymd(now())}toast('기기 교체 완료 · 기기 정보가 갱신됐어요')}}
+  save();reqSheet(no);rDev()}
+/* 폼 상태 */
+let RQ={};
+function optBtns(key,list){return `<div class="opts">${list.map(o=>`<button class="${RQ[key]===o?'on':''}" onclick="RQ.${key}='${o}';this.parentNode.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b===this))">${o}</button>`).join('')}</div>`}
+function dateIn(id,plus){const d=new Date(+now()+plus*DAY);return `<input class="inp" type="date" id="${id}" value="${ymd(d)}" min="${ymd(new Date(+now()+DAY))}">`}
+function cartSheet(){const ci=cartInfo();RQ={how:'택배 수령 후 직접 교체'};const dup=S.reqs.find(r=>r.type==='cart'&&r.st<3);
+  openSheet(sheetHd('카트리지 교체')+`<div class="sbody">
+   <div class="between"><b>잔여 ${ci.left}회 / ${ci.max}회</b><span class="small muted">장착일 ${S.sys.br.cart.date.replace(/-/g,'.')}</span></div><div class="gauge ${ci.lv}"><i style="width:${ci.pct}%"></i></div>
+   <div class="info ${ci.lv?'warn':''}">${ci.lv?'교체 시기가 다가왔어요. 잔여 횟수가 0이 되면 측정이 되지 않아 시동을 걸 수 없어요.':`${CART_MONTHS}개월 또는 ${ci.max}회 중 먼저 도달하면 교체해 주세요.`}</div>
+   ${dup?`<div class="info warn">이미 진행 중인 교체 요청이 있어요 (${dup.no} · ${REQ_ST.cart[dup.st]})</div><button class="big-btn line" style="margin-top:12px" onclick="reqSheet('${dup.no}')">요청 확인하기</button>`:`
+   <span class="fld">교체 방법</span>${optBtns('how',['택배 수령 후 직접 교체','방문 교체'])}
+   <span class="fld">받을 주소 / 방문 장소</span><input class="inp" id="rqAddr" placeholder="예) 서울 중구 을지로 65, 본사 주차장 B2">
+   <span class="fld">희망일</span>${dateIn('rqDate',3)}
+   <button class="big-btn" style="margin-top:16px" onclick="const a=$('#rqAddr').value.trim();if(!a){toast('주소를 입력해 주세요');return}reqDone(newReq('cart','카트리지 교체',[['교체 방법',RQ.how],['장소',a],['희망일',$('#rqDate').value],['신청 시 잔여','${ci.left}회']]))">교체 신청</button>`}</div>`)}
+function replaceSheet(){RQ={why:'측정 오류'};const dup=S.reqs.find(r=>r.type==='replace'&&r.st<3);
+  openSheet(sheetHd('측정기 교체 요청')+`<div class="sbody">
+   <div class="kv"><span>교체 기기</span><b>${S.sys.br.name} · SN ${S.sys.br.sn}</b></div>
+   ${dup?`<div class="info warn">이미 진행 중인 교체 요청이 있어요 (${dup.no} · ${REQ_ST.replace[dup.st]})</div><button class="big-btn line" style="margin-top:12px" onclick="reqSheet('${dup.no}')">요청 확인하기</button></div>`:`
+   <span class="fld">사유</span>${optBtns('why',['측정 오류','전원 안 켜짐','파손','분실','기타'])}
+   <span class="fld">상세 내용</span><textarea class="inp" id="rqTxt" maxlength="300" placeholder="증상, 발생 시점 등을 적어 주세요"></textarea>
+   <span class="fld">방문 희망일</span>${dateIn('rqDate',2)}
+   <span class="fld">방문 장소</span><input class="inp" id="rqAddr" placeholder="예) 서울 중구 을지로 65, 본사 주차장 B2">
+   <div class="info warn">교체 전까지 측정이 불가능하면 홈의 [긴급] 해제나 관리자 승인을 이용해 주세요.</div>
+   <button class="big-btn" style="margin-top:14px" onclick="const a=$('#rqAddr').value.trim();if(!a){toast('방문 장소를 입력해 주세요');return}const no=newReq('replace','측정기 교체',[['사유',RQ.why],['상세',$('#rqTxt').value||'-'],['희망일',$('#rqDate').value],['장소',a]]);S.reqs[0].target='측정기';save();reqDone(no)">교체 요청</button></div>`}`)}
+function calSheet(){const cl=calInfo();RQ={};
+  openSheet(sheetHd('검교정 신청')+`<div class="sbody"><div class="kv"><span>최근 교정일</span><b>${S.sys.br.cal.replace(/-/g,'.')}</b></div><div class="kv"><span>다음 교정 기한</span><b>${ymd(cl.due).replace(/-/g,'.')}</b></div>
+   <div class="info">측정값의 정확도를 유지하려면 6개월마다 교정을 받아야 해요. 방문 교정은 약 20분 걸려요.</div>
+   <span class="fld">방문 희망일</span>${dateIn('rqDate',5)}<span class="fld">방문 장소</span><input class="inp" id="rqAddr" placeholder="예) 본사 주차장 B2">
+   <button class="big-btn" style="margin-top:16px" onclick="const a=$('#rqAddr').value.trim();if(!a){toast('방문 장소를 입력해 주세요');return}reqDone(newReq('cal','검교정',[['희망일',$('#rqDate').value],['장소',a]]))">신청하기</button></div>`)}
+function asSheet(){RQ={sym:'측정했는데 해제가 안 돼요'};
+  openSheet(sheetHd('고장 점검 (A/S)')+`<div class="sbody"><span class="fld" style="margin-top:4px">증상</span>${optBtns('sym',['측정했는데 해제가 안 돼요','측정기가 반응 없어요','측정 결과가 이상해요','기타'])}
+   <span class="fld">상세 내용</span><textarea class="inp" id="rqTxt" maxlength="300" placeholder="언제부터, 어떤 상황에서 발생하는지 적어 주세요"></textarea>
+   <div class="info">접수하면 측정기의 최근 상태 기록이 함께 첨부돼요.</div>
+   <button class="big-btn" style="margin-top:14px" onclick="reqDone(newReq('as','고장 점검',[['증상',RQ.sym],['상세',$('#rqTxt').value||'-'],['첨부','측정기 상태 기록 (자동)']]))">접수하기</button></div>`)}
+function notifSheet(){const n=S.notif,row=(k,l,s)=>`<button class="opt" onclick="S.notif.${k}=!S.notif.${k};save();notifSheet();rDev()"><span>${l}<span class="small muted" style="display:block;font-weight:400">${s}</span></span><span class="tg ${n[k]?'on':''}" style="transform:scale(.8)"></span></button>`;
+ openSheet(sheetHd('알림 설정')+row('done','측정 결과 알림','차량에서 측정하면 인증 결과와 시동 잠금 상태를 알려드려요')+row('expire','인증 만료 알림','인증 유효시간 10분 전에 알려드려요')+row('cart','소모품·교정 알림','카트리지 교체·검교정 시기를 알려드려요')+row('remind','측정 리마인드','출근 시간(08:00)에 측정을 안내해요'))}
+function infoSheet(){const b=S.sys.br,cl=calInfo(),ci=cartInfo();openSheet(sheetHd('기기 정보')+`<div class="sbody">
+ ${[['모델',b.name],['일련번호',b.sn],['펌웨어',b.fw],['장착 차량',S.car],['카트리지',`잔여 ${ci.left}회 · 장착 ${b.cart.date.replace(/-/g,'.')}`],['최근 교정일',b.cal.replace(/-/g,'.')],['다음 교정',ymd(cl.due).replace(/-/g,'.')]].map(([k,v])=>`<div class="kv"><span>${k}</span><b>${v}</b></div>`).join('')}</div>`)}
+function careSheet(){openSheet(sheetHd('기기 관리 방법')+`<div class="sbody" style="line-height:1.7;font-size:14px">
+ <p>① 측정 전 20분 동안은 음식·음료·흡연·구강청결제를 피해 주세요.</p><p>② 마우스피스는 1인 1개를 쓰고, 사용 후 마른 천으로 닦아 주세요.</p>
+ <p>③ 물이나 알코올 소독제로 센서 입구를 닦지 마세요.</p><p>④ 카트리지는 ${CART_MONTHS}개월 또는 ${S.sys.br.cart.max}회 중 먼저 오는 시점에 교체해 주세요.</p><p>⑤ 6개월마다 검교정을 받아야 측정값이 정확해요.</p><p>⑥ 측정기 연결 케이블을 빼지 마세요. 빠지면 측정이 되지 않아 시동 잠금이 풀리지 않아요.</p></div>
+ <div style="padding:6px 22px 0;display:flex;gap:8px"><button class="big-btn line" onclick="closeSheet();cartSheet()">카트리지 교체 신청</button></div>`)}
+
+/* ================= 안전 리포트 ================= */
+function idxOf(rs,days){if(!rs.length)return null;const r=rs.filter(x=>x.bac<LIMIT).length/rs.length;const md_=new Set(rs.map(x=>ymd(x.ts))).size;const c=Math.min(1,md_/Math.max(1,days));return Math.round(70*r+30*c)}
+function cycle(rs){const ds=[...new Set(rs.map(x=>ymd(x.ts)))].sort();if(ds.length<2)return null;return Math.round(((new Date(ds[ds.length-1])-new Date(ds[0]))/DAY/(ds.length-1))*10)/10}
+function workdays(a,b){let n=0;for(let t=+a;t<+b;t+=DAY){const w=new Date(t).getDay();if(w>0&&w<6)n++}return n}
+function rRep(){
+  const n=now(),rm=S.repMonth||{y:n.getFullYear(),m:n.getMonth()};const ms=new Date(rm.y,rm.m,1),me=new Date(rm.y,rm.m+1,1),end=+me>+n?sod(new Date(+n+DAY)):me;
+  const drive=S.recs.filter(r=>r.kind==='drive');
+  const inR=(a,b)=>drive.filter(r=>r.ts>=+a&&r.ts<+b);
+  const mi=idxOf(inR(ms,end),workdays(ms,end));const pm=new Date(rm.y,rm.m-1,1),pmi=idxOf(inR(pm,ms),workdays(pm,ms));
+  const ws=weekStart(+end-DAY),pw=new Date(+ws-7*DAY);
+  const wR=inR(ws,+ws+7*DAY),pR=inR(pw,ws);const wi=idxOf(wR,workdays(ws,Math.min(+ws+7*DAY,+end))),pi=idxOf(pR,5);
+  const wc=cycle(inR(+ws-21*DAY,+ws+7*DAY)),pc=cycle(inR(+pw-21*DAY,ws));
+  const mc=cycle(inR(ms,end)),pmc=cycle(inR(pm,ms));
+  const days=[...Array(7)].map((_,i)=>{const d=new Date(+ws+i*DAY),k=ymd(d),rs=drive.filter(r=>ymd(r.ts)===k);return {d,c:rs.length,i:rs.length?idxOf(rs,1):null,fut:k>ymd(n)}});
+  const weeks=[];for(let s=weekStart(ms);+s<+end;s=new Date(+s+7*DAY)){const a=new Date(Math.max(+s,+ms)),b=new Date(Math.min(+s+7*DAY,+end));const rs=inR(a,b);weeks.push({a,b:new Date(+b-DAY),i:idxOf(rs,workdays(a,b))})}
+  const dl=(a,b,lowGood)=>{if(a==null||b==null)return '';const v=Math.round((a-b)*10)/10;if(!v)return '<span class="dlt dn">-</span>';const good=lowGood?v<0:v>0;
+    const t=lowGood?`${Math.round(Math.abs(v)/b*100)}%`:Math.abs(v);return `<span class="dlt ${good?'':'dn'}">${v<0?'⌄':'⌃'} ${t}</span>`};
+  const grade=mi==null?'측정 기록이 없어요':mi>=90?'매우 안전한 상태예요':mi>=75?'안전한 상태예요':'측정 습관을 점검해 주세요';
+  $('#v-rep').innerHTML=hills(120)+`
+  <div class="top"><div><div class="h1">안전 리포트</div><p class="lead">꾸준한 확인이 만드는<br>더 안전한 내일</p></div>
+   <button class="pill" onclick="monthSheet('rep')">${IC.cal('#6b7684',17)}<span>${rm.y}년 ${rm.m+1}월</span>${IC.chevD()}</button></div>
+  <div class="idx" style="margin-top:14px"><span class="lbl">${rm.m===n.getMonth()?'이번 달':rm.m+1+'월'} 안전운전 지수</span> <button class="small" style="color:#5b7c70;text-decoration:underline;margin-left:4px" onclick="idxSheet()">산정 기준</button>
+   <div class="big">${mi??'-'}<small> /100</small></div><span class="chip" style="background:rgba(255,255,255,.7);margin-top:8px">${mi!=null&&mi>=75?IC.check('#146b4c',13):''} ${grade}</span>
+   <div style="position:absolute;right:4px;bottom:-6px">${mascot(110,{prop:'shield'})}</div>
+   <p style="position:absolute;right:14px;top:16px;font-size:13px;line-height:1.5;text-align:right;color:#2e4a40">오늘도<br>안전한 선택,<br>멋져요!</p>
+</div>
+  <div class="card" style="padding:18px;margin-top:14px">
+   <div class="row"><span style="width:50px;height:50px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center">${IC.bars()}</span><div style="flex:1"><b style="font-size:18px">주간 통계</b><div class="small muted">이번 주도 꾸준히 측정하고 있어요.</div></div></div>
+   <div class="kp"><div><small>평균 측정 주기</small><div><b>${wc??'-'}<i>일</i></b>${dl(wc,pc,true)}</div><small>지난주 ${pc??'-'}일</small></div>
+    <div><small>안전운전 지수</small><div><b>${wi??'-'}<i> /100</i></b>${dl(wi,pi)}</div><small>지난주 ${pi??'-'}점</small></div></div>
+   <div class="legend"><span>● 측정 횟수</span><span style="color:var(--g)">-○- 안전운전 지수</span></div>
+   <div class="chart">${weekChart(days)}</div></div>
+  <div class="card" style="padding:18px;margin-top:14px">
+   <div class="row"><span style="width:50px;height:50px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center">${IC.cal('#1f9e6e',24)}</span><div style="flex:1"><b style="font-size:18px">월간 통계</b><div class="small muted">이번 달도 안전한 습관을 이어가고 있어요.</div></div></div>
+   <div class="kp"><div><small>평균 측정 주기</small><div><b>${mc??'-'}<i>일</i></b>${dl(mc,pmc,true)}</div><small>지난달 ${pmc??'-'}일</small></div>
+    <div><small>안전운전 지수</small><div><b>${mi??'-'}<i> /100</i></b>${dl(mi,pmi)}</div><small>지난달 ${pmi??'-'}점</small></div></div>
+   <div class="chart" style="margin-top:12px">${monthChart(weeks,rm.m)}</div></div>`;
+}
+function weekChart(days){const W=340,H=190,L=26,B=150,T=14,cw=(W-L)/7,mx=4;
+  const y=v=>B-(v/100)*(B-T),yc=c=>B-(Math.min(c,mx)/mx)*(B-T)*0.8;
+  const pts=days.map((d,i)=>d.i!=null?[L+cw*i+cw/2,y(d.i)]:null).filter(Boolean);
+  return `<svg viewBox="0 0 ${W} ${H}">${[0,25,50,75,100].map(v=>`<text x="0" y="${y(v)+4}" font-size="10" fill="#9aa4ae">${v}</text><path d="M${L} ${y(v)}H${W}" stroke="#eef1f3"/>`).join('')}
+  ${days.map((d,i)=>`<rect x="${L+cw*i+cw*.22}" y="${yc(d.c)}" width="${cw*.56}" height="${B-yc(d.c)}" rx="4" fill="${d.c?'#9fdcc0':'#eef1f3'}"/>${d.c?`<text x="${L+cw*i+cw/2}" y="${yc(d.c)-4}" font-size="10" text-anchor="middle" fill="#5b8f78">${d.c}회</text>`:''}
+   <text x="${L+cw*i+cw/2}" y="${B+16}" font-size="10.5" text-anchor="middle" fill="#7b8594">${d.d.getMonth()+1}/${d.d.getDate()}</text><text x="${L+cw*i+cw/2}" y="${B+30}" font-size="10.5" text-anchor="middle" fill="#7b8594">(${WD[d.d.getDay()]})</text>`).join('')}
+  ${pts.length>1?`<path d="${pts.map((p,i)=>(i?'L':'M')+p.join(' ')).join('')}" fill="none" stroke="#1f9e6e" stroke-width="2"/>`:''}
+  ${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4.5" fill="#fff" stroke="#1f9e6e" stroke-width="2"/>`).join('')}</svg>`}
+function monthChart(ws,m){const W=340,H=150,L=26,B=108,T=20,n=ws.length,cw=(W-L)/n,y=v=>B-(v/100)*(B-T);
+  return `<svg viewBox="0 0 ${W} ${H}">${[0,50,100].map(v=>`<text x="0" y="${y(v)+4}" font-size="10" fill="#9aa4ae">${v}</text>`).join('')}<path d="M${L} ${B}H${W}" stroke="#e3e8eb"/>
+  ${ws.map((w,i)=>{const v=w.i??0,last=i===n-1;return `<rect x="${L+cw*i+cw*.2}" y="${y(v)}" width="${cw*.6}" height="${B-y(v)}" rx="5" fill="${last?'#7fd0ab':'#a9e0c6'}"/>
+   <text x="${L+cw*i+cw/2}" y="${y(v)-6}" font-size="11" text-anchor="middle" fill="${last?'#146b4c':'#7b8594'}" font-weight="${last?700:400}">${w.i??'-'}</text>
+   <text x="${L+cw*i+cw/2}" y="${B+16}" font-size="10.5" text-anchor="middle" fill="#55606c">${m+1}월 ${i+1}주</text>
+   <text x="${L+cw*i+cw/2}" y="${B+30}" font-size="9.5" text-anchor="middle" fill="#9aa4ae">(${w.a.getMonth()+1}/${w.a.getDate()}-${w.b.getMonth()+1}/${w.b.getDate()})</text>`}).join('')}</svg>`}
+function idxSheet(){openSheet(sheetHd('안전운전 지수 산정 기준 (예시)')+`<div class="sbody" style="font-size:14px;line-height:1.7">
+ <p><b>지수 = 정상 비율 × 70 + 측정 꾸준함 × 30</b></p><p class="muted small">· 정상 비율: 운전 전 측정 중 ${LIMIT}% 미만 비율<br>· 측정 꾸준함: 평일 중 측정한 날의 비율<br>· 테스트 측정은 제외해요<br>· 90점 이상 매우 안전 / 75점 이상 안전</p>
+ <p class="small" style="margin-top:8px;color:var(--amb)">※ 기준 수치는 기획 확정 전 예시예요.</p></div>`)}
+
+/* ================= 기기 테스트 =================
+   앱에서는 측정하지 않음. 측정은 차량 음주측정기에서 하고 단말이 성공/실패를 판정,
+   서버가 인증·유지시간을 관리하며 앱은 상태와 기록만 표시. 아래는 측정기 원격 점검(테스트)만 제공 */
+let F=null;
+const hms=t=>{const d=new Date(t);return hm(d)+':'+pad(d.getSeconds())};
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function startTest(){F={kind:'test',timer:null,vs:[]};$('#flow').classList.add('on');$('#fTitle').textContent='기기 테스트';fTest()}
+function flowClose(force){if(F&&F.busy&&!force){toast('점검 중에는 닫을 수 없어요');return}if(F){clearInterval(F.timer);F.dead=1}F=null;$('#flow').classList.remove('on');render()}
+function fSteps(i,n=2){$('#fSteps').innerHTML=[...Array(n)].map((_,k)=>`<i class="${k<=i?'on':''}"></i>`).join('')}
+function vsList(){return `<div class="vsteps">${F.vs.map(v=>`<div class="vs ${v.s}"><span class="i">${v.s==='ok'?IC.check('#fff',13):v.s==='fail'?IC.x('#fff',11):''}</span><div><b>${v.t}</b>${v.d?`<span>${v.d}</span>`:''}</div><span class="tm">${v.tm||''}</span></div>`).join('')}</div>`}
+function setVs(i,s,extra){Object.assign(F.vs[i],{s},extra||{});if(s==='ok'||s==='fail')F.vs[i].tm=hms(now());const e=$('#vsBox');if(e)e.innerHTML=vsList()}
+async function fTest(){fSteps(0);F.busy=1;
+  F.vs=[{t:'측정기 상태 확인',s:'run'},{t:'센서 자가진단',s:'wait'},{t:'카트리지 잔여 확인',s:'wait'}];
+  $('#fBody').innerHTML=`<div style="margin-top:4px">${mascot(90,{prop:'dev',mood:'happy',wave:false})}</div><div class="ftitle">측정기를 점검하고 있어요</div><p class="fdesc">${S.sys.br.name} · ${S.car}</p><div id="vsBox" style="width:100%">${vsList()}</div><div id="blowBox" style="width:100%"></div>`;$('#fFoot').innerHTML='';
+  await sleep(800);if(!F||F.dead)return;setVs(0,S.sys.br.link?'ok':'fail',{d:S.sys.br.link?`전원·연결 정상 · 펌웨어 ${S.sys.br.fw}`:'측정기 연결 케이블을 확인해 주세요'});setVs(1,'run');
+  await sleep(900);if(!F||F.dead)return;setVs(1,'ok',{d:'센서 온도·압력 정상'});setVs(2,'run');
+  await sleep(500);if(!F||F.dead)return;const ci=cartInfo();
+  setVs(2,ci.lv==='bad'?'fail':'ok',{d:`잔여 ${ci.left}회 · 교체 권장 ${ymd(ci.due).replace(/-/g,'.')}${ci.lv==='warn'?' (교체 시기 임박)':''}`});F.busy=0;fSteps(1);
+  $('#blowBox').innerHTML=`<div class="info ${ci.lv?'warn':''}" style="margin-top:14px">${ci.lv?'점검 완료 · 카트리지 교체가 필요해요.':'점검 완료 · 측정기가 정상이에요.'} 테스트 측정은 시동과 연결되지 않아요.</div>`;
+  $('#fFoot').innerHTML=`<button class="big-btn" onclick="fTestBlow()">테스트 측정하기</button>${ci.lv?`<button class="big-btn line" onclick="flowClose(true);cartSheet()">카트리지 교체 신청</button>`:''}<button class="big-btn line" onclick="flowClose(true)">닫기</button>`}
+async function fTestBlow(){F.busy=1;$('#fFoot').innerHTML='';let t=5;
+  $('#blowBox').innerHTML=`<div class="blowcard"><b>차량 측정기에 불어 주세요 · <span id="bSec">5</span>초</b><p>측정기 화면에 “TEST”가 표시돼요.</p><div class="wave" style="justify-content:flex-start">${[...Array(12)].map((_,i)=>`<i style="background:#bff0d8;animation-delay:${i*.08}s"></i>`).join('')}</div></div>`;
+  await new Promise(res=>{F.timer=setInterval(()=>{t--;const e=$('#bSec');if(e)e.textContent=t;if(t<=0){clearInterval(F.timer);res()}},1000)});if(!F||F.dead)return;
+  const ok=S.demoRes!=='bad',ts=+now();S.recs.unshift({id:ts,ts,bac:ok?0:0.047,kind:'test'});S.sys.br.cart.used++;save();F.busy=0;
+  $('#blowBox').innerHTML=`<div class="card" style="padding:18px;margin-top:14px;text-align:center"><div class="res ${ok?'':'bad'}" style="width:76px;height:76px;margin:0 auto">${ok?IC.check('#1f9e6e',38):IC.x('#e0534a',32)}</div>
+   <b style="display:block;font-size:18px;margin-top:10px;color:${ok?'var(--gd)':'var(--red)'}">테스트 측정 ${ok?'성공':'실패 (알코올 감지)'}</b><div class="small muted" style="margin-top:4px">측정기가 정상적으로 판정했어요 · 시동 잠금 상태는 바뀌지 않아요</div></div>`;
+  $('#fFoot').innerHTML=`<button class="big-btn" onclick="flowClose(true)">확인</button>`}
+
+/* ================= 저장 ================= */
+const KEY='safebac.v3';
+function save(){if(!S.user)return;try{localStorage.setItem(userKey(),JSON.stringify({recs:S.recs,sys:S.sys,reqs:S.reqs,emg:S.emg,notif:S.notif,auth:S.auth,ign:S.ign,demoRes:S.demoRes}))}catch(e){}}
+function load(){try{const o=JSON.parse(localStorage.getItem(userKey())||'null');if(!o||!o.sys)return false;Object.assign(S,o);return true}catch(e){return false}}
+
+/* ================= 앱(네이티브) 연동 ================= */
+const NATIVE=!!(window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform());
+const PL=()=>(window.Capacitor&&Capacitor.Plugins)||{};
+function onBack(){if($('#login').classList.contains('on')){const A=PL().App;if(A&&A.exitApp)A.exitApp();return}if($('#sbg').classList.contains('on')){closeSheet();return}if(F){flowClose();return}if(S.tab!=='home'){goTab('home');return}const A=PL().App;if(A&&A.exitApp)A.exitApp()}
+function initNative(){if(!NATIVE)return;const P=PL();
+  try{P.App.addListener('backButton',onBack)}catch(e){}
+  try{P.App.addListener('appStateChange',s=>{if(s.isActive){checkExpire();render()}else save()})}catch(e){}
+  try{P.StatusBar.setStyle({style:'LIGHT'});if(Capacitor.getPlatform()==='android'){P.StatusBar.setOverlaysWebView({overlay:false});P.StatusBar.setBackgroundColor({color:'#f3f7f6'})}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){checkExpire();if(!F)render()}else save()});
+
+/* 시연 패널: 홈 화면 맨 아래 (리포트 탭 길게 누르기 대신 항상 노출) */
+function demoPanel(){const c=(on,js,l)=>`<span class="chip ${on?'on':'gray'}" onclick="${js}">${l}</span>`;return `<div class="demo"><b>시연용 · 차량 측정 결과와 서버 설정 바꿔보기</b>
+ <div class="small muted" style="margin-top:8px">차량 음주측정기에서 측정 (단말 판정 → 서버 인증 → 앱 알림)</div><div class="chips">${c(false,'simMeasure(true)','✓ 측정 성공')}${c(false,'simMeasure(false)','✕ 측정 실패')}</div>
+ <div class="small muted" style="margin-top:8px">시각 (인증 유지 정책)</div><div class="chips">${[[null,'현재 시각'],[10,'10:05 업무시간'],[17,'17:59 마감 직전'],[20,'20:05 업무시간 외']].map(([h,l])=>c(S.demoHour===h,`S.demoHour=${h};checkExpire();rHome()`,l)).join('')}</div>
+ <div class="small muted" style="margin-top:8px">긴급 해제 허용 (서버 설정값 · 기본 1회)</div><div class="chips">${[0,1,3].map(k=>c(S.emg.limit===k,`S.emg.limit=${k};save();rHome()`,k+'회')).join('')}${[['day','하루 기준'],['month','한 달 기준']].map(([k,l])=>c(S.emg.period===k,`S.emg.period='${k}';save();rHome()`,l)).join('')}</div>
+ <div class="small muted" style="margin-top:8px">테스트 측정 결과</div><div class="chips">${[['auto','성공'],['bad','실패']].map(([k,l])=>c(S.demoRes===k,`S.demoRes='${k}';save();rHome()`,l)).join('')}</div>
+ <div class="chips" style="margin-top:10px">${c(false,"S.ign=false;S.auth=null;save();rHome();toast('시동 잠금 상태로 되돌렸어요')",'잠금 상태로')}${c(false,"if(confirm('시연 데이터를 처음 상태로 되돌릴까요?')){localStorage.removeItem(userKey());location.reload()}",'데이터 초기화')}</div></div>`}
+const _rHome=rHome;rHome=function(){_rHome();$('#v-home').insertAdjacentHTML('beforeend',demoPanel())};
+[['rHome','home'],['rHist','hist'],['rDev','dev'],['rRep','rep']].forEach(([f,v])=>{const o=window[f];window[f]=function(){if(!S.user)return;o();const el=$('#v-'+v),h=el.querySelector('.hill');(h?h:el.firstChild).insertAdjacentHTML(h?'afterend':'beforebegin',carBar())}});
+
+/* ================= 로그인 · 사용자 차량 =================
+   실제: 로그인 ID → 서버에서 사용자 정보 조회 → 배정 차량번호 반환
+   시연: 아래 계정 목록으로 대체 (계정별 데이터 분리 저장) */
+const USERS={
+ driver01:{pw:'1234',name:'김세기',org:'SEGI MOBILITY 영업1팀',model:'아반떼',plate:'12가 3456'},
+ driver02:{pw:'1234',name:'이모빌',org:'SEGI MOBILITY 물류팀',model:'포터2',plate:'80다 1234'},
+ driver03:{pw:'1234',name:'박안전',org:'SEGI MOBILITY 기술지원팀',model:'쏘나타',plate:'34나 5678'}};
+const SESS='safebac.session';
+function userKey(){return KEY+'.'+(S.user?S.user.id:'guest')}
+function showLogin(err){const l=$('#login');l.classList.add('on');
+  l.innerHTML=`<div class="brand">${mascot(110,{prop:'shield'})}<b>세이프시동</b><p>음주측정 인증으로 안전하게 시동을 걸어요</p></div>
+  <div class="lf"><label for="lid">아이디</label><input class="inp" id="lid" autocomplete="username" autocapitalize="off" placeholder="아이디를 입력해 주세요">
+   <label for="lpw">비밀번호</label><input class="inp" id="lpw" type="password" autocomplete="current-password" placeholder="비밀번호를 입력해 주세요" onkeydown="if(event.key==='Enter')doLogin()">
+   <div class="lerr" id="lerr">${err||''}</div>
+   <div class="lopt"><label><input type="checkbox" id="lkeep" checked> 로그인 유지</label><button class="small muted" onclick="toast('관리자에게 비밀번호 초기화를 요청해 주세요')">비밀번호 찾기</button></div>
+   <button class="big-btn" onclick="doLogin()">로그인</button></div>
+  <div class="demoacc"><b>시연용 계정 · 비밀번호 1234</b>${Object.entries(USERS).map(([id,u])=>`<button class="acc" onclick="$('#lid').value='${id}';$('#lpw').value='${u.pw}';doLogin()"><span style="flex:1"><div class="id">${id}</div><div class="nm">${u.name} · ${u.org}</div></span><span class="plate" style="font-size:13.5px">${u.plate}</span></button>`).join('')}</div>`}
+function doLogin(){const id=$('#lid').value.trim().toLowerCase(),pw=$('#lpw').value,u=USERS[id];
+  if(!id||!pw){$('#lerr').textContent='아이디와 비밀번호를 입력해 주세요.';return}
+  if(!u||u.pw!==pw){$('#lerr').textContent='아이디 또는 비밀번호가 맞지 않아요.';return}
+  const keep=$('#lkeep').checked;try{keep?localStorage.setItem(SESS,id):localStorage.removeItem(SESS)}catch(e){}
+  startSession(id);toast(`${u.name}님 · ${u.plate} 차량으로 로그인했어요`)}
+function startSession(id){const u=USERS[id];S.user={id,...u};
+  Object.assign(S,{recs:[],reqs:[],auth:null,ign:false,histDay:null,repMonth:null,emg:{limit:1,period:'month'},
+   sys:{br:{name:'SafeBac Pro',sn:snFor(id),fw:'v1.2.3',link:true,cal:'2026-09-02',cart:{used:412,max:500,date:'2026-08-20'}}}});
+  S.car=`${u.model} ${u.plate}`;
+  if(!load()){S.recs=seed();save()}
+  S.car=`${u.model} ${u.plate}`;
+  $('#login').classList.remove('on');drawTabs();goTab('home')}
+function snFor(id){let h=0;for(const c of id)h=(h*31+c.charCodeAt(0))>>>0;const x=h.toString(16).toUpperCase().padStart(8,'0');return `8F23-${x.slice(0,4)}-${x.slice(4,8)}`}
+function logout(){closeSheet();save();const nb=$('#ntf');if(nb)nb.classList.remove('on');clearTimeout(nt_);try{localStorage.removeItem(SESS)}catch(e){}S.user=null;S.demoHour=null;showLogin()}
+function carBar(){const u=S.user;if(!u)return '';return `<div class="cbar"><button class="cbtn" onclick="accountSheet()" aria-label="내 차량 정보">${IC.car('#1f9e6e',18)}<span class="plate">${u.plate}</span><span class="mdl">${u.model}</span>${IC.chevD('#9aa4ae',13)}</button>
+  <button class="ubtn" onclick="accountSheet()" aria-label="내 정보">${u.name.slice(0,1)}</button></div>`}
+function accountSheet(){const u=S.user;openSheet(sheetHd('내 정보')+`<div class="sbody">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px"><span class="ubtn" style="width:48px;height:48px;font-size:18px;background:var(--gl)">${u.name.slice(0,1)}</span><div><b style="font-size:17px">${u.name}</b><div class="small muted">${u.org}</div></div></div>
+  <div class="kv"><span>아이디</span><b>${u.id}</b></div><div class="kv"><span>배정 차량</span><b>${u.model} <span class="plate" style="font-size:14px;margin-left:4px">${u.plate}</span></b></div>
+  <div class="kv"><span>음주측정기</span><b>${S.sys.br.name}</b></div>
+  <p class="small muted" style="margin-top:10px;line-height:1.5">배정 차량은 관리자가 지정해요. 차량이 다르면 관리자에게 문의해 주세요.</p>
+  <button class="big-btn line" style="margin-top:14px" onclick="logout()">로그아웃</button></div>`)}
+
+/* ================= 시작 ================= */
+initNative();
+{let sid=null;try{sid=localStorage.getItem(SESS)}catch(e){}if(sid&&USERS[sid])startSession(sid);else showLogin()}
+setInterval(()=>{checkExpire();if(S.tab==='home'&&!F&&!$('#sbg').classList.contains('on')&&S.ign)rHome()},30000);
+if('serviceWorker' in navigator&&location.protocol==='https:'&&!NATIVE)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
